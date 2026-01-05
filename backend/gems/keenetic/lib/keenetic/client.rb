@@ -3,9 +3,47 @@ require 'json'
 require 'digest'
 
 module Keenetic
+  # HTTP client for Keenetic router API.
+  #
+  # == Authentication Flow
+  # Keenetic uses a challenge-response authentication mechanism:
+  #
+  #   Step 1: GET /auth
+  #           Response: HTTP 401 with headers X-NDM-Challenge and X-NDM-Realm
+  #           Also sets session cookie
+  #
+  #   Step 2: Calculate authentication hash
+  #           md5_hash = MD5(login + ":" + realm + ":" + password)
+  #           auth_hash = SHA256(challenge + md5_hash)
+  #
+  #   Step 3: POST /auth
+  #           Body: {"login": "admin", "password": "<auth_hash>"}
+  #           Response: HTTP 200 on success
+  #           Session maintained via cookies
+  #
+  # == Request Types
+  #
+  # === Reading Data (GET)
+  #   GET /rci/show/<path>
+  #   Example: GET /rci/show/system, GET /rci/show/ip/hotspot
+  #
+  # === Writing Data (POST - Batch Format)
+  #   POST /rci/
+  #   Body: Array of commands (MUST be array, even for single command)
+  #   Example: [{"ip":{"hotspot":{"host":{"mac":"aa:bb:cc:dd:ee:ff","permit":true}}}}]
+  #
+  # == Thread Safety
+  # The client uses a mutex to prevent concurrent authentication attempts.
+  # Resource instances are memoized and thread-safe for reading.
+  #
   class Client
     attr_reader :config
 
+    # Create a new client instance.
+    #
+    # @param config [Configuration, nil] Optional configuration (uses global if nil)
+    # @raise [ConfigurationError] if configuration is invalid
+    #
     def initialize(config = nil)
       @config = config || Keenetic.configuration
       @config.validate!
@@ -14,50 +52,94 @@ module Keenetic
       @mutex = Mutex.new
     end
 
+    # @return [Resources::Devices] Device management resource
     def devices
       @devices ||= Resources::Devices.new(self)
     end
 
+    # @return [Resources::System] System information resource
     def system
       @system ||= Resources::System.new(self)
     end
 
+    # @return [Resources::Network] Network interfaces resource
     def network
       @network ||= Resources::Network.new(self)
     end
 
+    # @return [Resources::WiFi] Wi-Fi resource
     def wifi
       @wifi ||= Resources::WiFi.new(self)
     end
 
+    # @return [Resources::Internet] Internet status resource
     def internet
       @internet ||= Resources::Internet.new(self)
     end
 
+    # @return [Resources::Ports] Physical ports resource
     def ports
       @ports ||= Resources::Ports.new(self)
     end
 
+    # @return [Resources::Policies] Routing policies resource
     def policies
       @policies ||= Resources::Policies.new(self)
     end
 
+    # Make a GET request to the router API.
+    #
+    # == Keenetic API
+    #   GET http://<host>/rci/show/<path>
+    #
+    # @param path [String] API path (e.g., '/rci/show/system')
+    # @param params [Hash] Optional query parameters
+    # @return [Hash, Array, nil] Parsed JSON response
+    #
     def get(path, params = {})
       request(:get, path, params: params)
     end
 
+    # Make a POST request to the router API.
+    #
+    # == Keenetic API
+    #   POST http://<host>/rci/<path>
+    #   Content-Type: application/json
+    #
+    # @param path [String] API path
+    # @param body [Hash] Request body (will be JSON encoded)
+    # @return [Hash, Array, nil] Parsed JSON response
+    #
     def post(path, body = {})
       request(:post, path, body: body)
     end
 
-    # Execute multiple commands in a single request (batch request)
+    # Execute multiple commands in a single batch request.
+    #
+    # == Keenetic API
+    #   POST http://<host>/rci/
+    #   Content-Type: application/json
+    #   Body: Array of command objects
+    #
+    # == Important
+    # All write operations to Keenetic MUST use batch format (array).
+    # Even single commands must be wrapped in an array.
+    #
     # @param commands [Array<Hash>] Array of command hashes
     # @return [Array] Array of responses in the same order as commands
-    # @example
+    # @raise [ArgumentError] if commands is not a non-empty array
+    #
+    # @example Read multiple values
     #   client.batch([
-    #     { show: { system: {} } },
-    #     { show: { version: {} } }
+    #     { 'show' => { 'system' => {} } },
+    #     { 'show' => { 'version' => {} } }
     #   ])
+    #
+    # @example Write command (update device)
+    #   client.batch([
+    #     { 'known' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'name' => 'My Device' } } }
+    #   ])
+    #
     def batch(commands)
       raise ArgumentError, 'Commands must be an array' unless commands.is_a?(Array)
       raise ArgumentError, 'Commands array cannot be empty' if commands.empty?
@@ -65,10 +147,22 @@ module Keenetic
       request(:post, '/rci/', body: commands)
     end
 
+    # Check if client is authenticated.
+    # @return [Boolean]
     def authenticated?
       @authenticated
     end
 
+    # Perform authentication (thread-safe).
+    #
+    # Called automatically before first request.
+    # Uses mutex to prevent concurrent authentication attempts.
+    #
+    # @return [Boolean] true on success
+    # @raise [AuthenticationError] on failure
+    # @raise [TimeoutError] if connection times out
+    # @raise [ConnectionError] if router is unreachable
+    #
     def authenticate!
       @mutex.synchronize do
         return true if @authenticated

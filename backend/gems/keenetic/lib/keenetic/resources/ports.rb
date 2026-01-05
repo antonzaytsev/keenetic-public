@@ -1,13 +1,59 @@
 module Keenetic
   module Resources
+    # Ports resource for accessing physical Ethernet port status.
+    #
+    # == API Endpoints Used
+    #
+    # === Reading Port Statistics
+    #   GET /rci/show/interface/stat
+    #   Filters: Physical ports only (GigabitEthernet*, FastEthernet*, SFP*, USB*)
+    #
+    # == Port Naming Convention
+    #   - GigabitEthernet0, GigabitEthernet1, etc.: Gigabit Ethernet ports
+    #   - FastEthernet0, etc.: Fast Ethernet ports (100Mbps)
+    #   - SFP0: SFP port (if available)
+    #
+    # == Link Status
+    #   - link: true = cable connected, false = no cable
+    #   - speed: Current negotiated speed (1000, 100, 10 Mbps)
+    #   - duplex: "full" or "half"
+    #
     class Ports < Base
-      # Get all physical port statuses
+      # Get all physical port statuses.
+      #
+      # == Keenetic API Request
+      #   GET /rci/show/interface/stat
+      #   Internally filters for physical ports only
+      #
+      # == Response Fields
+      #   - id: Interface ID (e.g., "GigabitEthernet0")
+      #   - port: Port number extracted from ID
+      #   - type: "gigabit", "fast", "sfp", or "usb"
+      #   - link: true if cable connected
+      #   - speed: Negotiated speed in Mbps
+      #   - duplex: "full" or "half"
+      #   - rxbytes/txbytes: Traffic counters
+      #   - rxerrors/txerrors: Error counters
+      #   - media: Media type string
+      #
+      # @return [Array<Hash>] List of physical ports with status
+      # @example
+      #   ports = client.ports.all
+      #   # => [{ id: "GigabitEthernet0", port: 0, type: "gigabit", link: true, speed: 1000, ... }]
+      #
       def all
         response = get('/rci/show/interface/stat')
         normalize_ports(response)
       end
 
-      # Get specific port by ID
+      # Get specific port by ID.
+      #
+      # @param id [String] Port interface ID (e.g., "GigabitEthernet0")
+      # @return [Hash, nil] Port data or nil if not found
+      # @example
+      #   port = client.ports.find('GigabitEthernet0')
+      #   # => { id: "GigabitEthernet0", port: 0, link: true, speed: 1000, ... }
+      #
       def find(id)
         all.find { |p| p[:id] == id }
       end

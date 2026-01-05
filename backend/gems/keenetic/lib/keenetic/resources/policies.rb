@@ -4,14 +4,59 @@ module Keenetic
     #
     # Policies allow routing specific devices through VPN tunnels or other interfaces.
     #
-    # == Reading Policies
-    #   - IP Policies: GET via batch [{"show":{"sc":{"ip":{"policy":{}}}}}]
-    #   - Hotspot Policies: GET via batch [{"show":{"sc":{"ip":{"hotspot":{"policy":{}}}}}}]
-    #   - Device-Policy assignments: GET via batch [{"show":{"sc":{"ip":{"hotspot":{"host":{}}}}}}]
+    # == API Endpoints Used
+    #
+    # === Reading Policies
+    #   POST /rci/ (batch request)
+    #   Body: [{"show":{"sc":{"ip":{"policy":{}}}}}]
+    #
+    # === Reading Device-Policy Assignments
+    #   POST /rci/ (batch request)
+    #   Body: [{"show":{"sc":{"ip":{"hotspot":{"host":{}}}}}}]
+    #
+    # == Policy Structure
+    # Policies are identified by IDs like "Policy0", "Policy1", etc.
+    # Each policy has:
+    #   - description: Name prefixed with "!" (e.g., "!Latvia VPN")
+    #   - permit: Array of interfaces this policy routes through
+    #
+    # == Example Response from API
+    #   {
+    #     "show": {
+    #       "sc": {
+    #         "ip": {
+    #           "policy": {
+    #             "Policy0": {
+    #               "description": "!Latvia",
+    #               "permit": [
+    #                 { "interface": "Wireguard0", "enabled": true },
+    #                 { "interface": "ISP", "enabled": false }
+    #               ]
+    #             }
+    #           }
+    #         }
+    #       }
+    #     }
+    #   }
     #
     class Policies < Base
-      # Fetch all routing policies with their descriptions
-      # @return [Array<Hash>] List of policies with id, description, and interfaces
+      # Fetch all routing policies.
+      #
+      # == Keenetic API Request
+      #   POST /rci/
+      #   Body: [{"show":{"sc":{"ip":{"policy":{}}}}}]
+      #
+      # == Response Processing
+      # - Extracts policy data from nested response structure
+      # - Filters permit list to only enabled interfaces (enabled: true, no: not true)
+      # - Removes "!" prefix from description for clean policy name
+      #
+      # @return [Array<Hash>] List of policies with :id, :description, :name, :interfaces
+      # @example
+      #   policies = client.policies.all
+      #   # => [{ id: "Policy0", description: "!Latvia", name: "Latvia",
+      #   #       interfaces: ["Wireguard0"], interface_count: 1 }]
+      #
       def all
         response = client.batch([
           { 'show' => { 'sc' => { 'ip' => { 'policy' => {} } } } }
@@ -20,8 +65,33 @@ module Keenetic
         normalize_policies(response&.first)
       end
 
-      # Get policy assignments for all devices
-      # @return [Hash] MAC address => policy name mapping
+      # Get policy assignments for all devices.
+      #
+      # == Keenetic API Request
+      #   POST /rci/
+      #   Body: [{"show":{"sc":{"ip":{"hotspot":{"host":{}}}}}}]
+      #
+      # == Response Structure
+      #   {
+      #     "show": {
+      #       "sc": {
+      #         "ip": {
+      #           "hotspot": {
+      #             "host": [
+      #               { "mac": "00:11:22:33:44:55", "policy": "Policy0" },
+      #               { "mac": "AA:BB:CC:DD:EE:FF", "policy": "Policy1" }
+      #             ]
+      #           }
+      #         }
+      #       }
+      #     }
+      #   }
+      #
+      # @return [Hash] MAC address (lowercase) => policy ID mapping
+      # @example
+      #   assignments = client.policies.device_assignments
+      #   # => { "00:11:22:33:44:55" => "Policy0", "aa:bb:cc:dd:ee:ff" => "Policy1" }
+      #
       def device_assignments
         response = client.batch([
           { 'show' => { 'sc' => { 'ip' => { 'hotspot' => { 'host' => {} } } } } }
@@ -30,10 +100,15 @@ module Keenetic
         extract_device_policies(response&.first)
       end
 
-      # Find a specific policy by ID
+      # Find a specific policy by ID.
+      #
       # @param id [String] Policy ID (e.g., "Policy0")
       # @return [Hash] Policy data
       # @raise [NotFoundError] if policy not found
+      # @example
+      #   policy = client.policies.find(id: 'Policy0')
+      #   # => { id: "Policy0", name: "Latvia", interfaces: ["Wireguard0"], ... }
+      #
       def find(id:)
         policies = all
         policy = policies.find { |p| p[:id] == id }
