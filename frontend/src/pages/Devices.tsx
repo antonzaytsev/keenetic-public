@@ -52,6 +52,12 @@ export function Devices() {
     return map;
   }, [meshData?.members]);
 
+  // Find the controller (main router) name
+  const controllerName = useMemo(() => {
+    const controller = meshData?.members.find((member) => member.mode === 'controller');
+    return controller?.name || 'Router';
+  }, [meshData?.members]);
+
   // Get policy for a device by MAC address
   const getDevicePolicy = useCallback((mac: string) => {
     const policyId = policiesData?.device_assignments[mac];
@@ -127,11 +133,9 @@ export function Devices() {
           const meshNode = meshNodeMap.get(device.mws_cid);
           const band = formatWifiBand(device.wifi_ap);
           const nodeName = meshNode?.name || 'Unknown';
-          // Extract short name (first part before parenthesis)
-          const shortName = nodeName.split('(')[0].trim().replace(/^Keenetic\s+/i, '');
           return (
             <span className="device-wifi">
-              {shortName} {band && <span className="device-wifi__band">{band}</span>}
+              {nodeName} {band && <span className="device-wifi__band">{band}</span>}
             </span>
           );
         }
@@ -140,15 +144,14 @@ export function Devices() {
           const band = formatWifiBand(device.wifi_ap);
           return (
             <span className="device-wifi">
-              Router {band && <span className="device-wifi__band">{band}</span>}
+              {controllerName} {band && <span className="device-wifi__band">{band}</span>}
             </span>
           );
         }
         // Fallback to interface for wired devices
         const iface = device.interface;
         if (!iface) return '-';
-        const ifaceName = typeof iface === 'string' ? iface : (iface.name || iface.id || '-');
-        return <span className="device-wired">{ifaceName}</span>;
+        return <span className="device-wired">Ethernet</span>;
       },
     },
     {
