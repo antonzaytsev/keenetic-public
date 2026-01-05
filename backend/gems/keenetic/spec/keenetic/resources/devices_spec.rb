@@ -6,36 +6,41 @@ RSpec.describe Keenetic::Resources::Devices do
 
   before { stub_keenetic_auth }
 
+  # Helper to stub both required endpoints for devices.all
+  def stub_devices_endpoints(hosts_response, associations_response = { 'station' => [] })
+    stub_request(:get, 'http://192.168.1.1/rci/show/ip/hotspot/host')
+      .to_return(status: 200, body: hosts_response.to_json)
+    stub_request(:get, 'http://192.168.1.1/rci/show/associations')
+      .to_return(status: 200, body: associations_response.to_json)
+  end
+
   describe '#all' do
     let(:hotspot_response) do
-      {
-        'host' => [
-          {
-            'mac' => 'AA:BB:CC:DD:EE:FF',
-            'name' => 'My Phone',
-            'hostname' => 'iphone',
-            'ip' => '192.168.1.100',
-            'interface' => 'Bridge0',
-            'active' => true,
-            'registered' => true,
-            'rxbytes' => 1_000_000,
-            'txbytes' => 500_000
-          },
-          {
-            'mac' => '11:22:33:44:55:66',
-            'hostname' => 'laptop',
-            'ip' => '192.168.1.101',
-            'interface' => 'Bridge0',
-            'active' => false,
-            'registered' => true
-          }
-        ]
-      }
+      [
+        {
+          'mac' => 'AA:BB:CC:DD:EE:FF',
+          'name' => 'My Phone',
+          'hostname' => 'iphone',
+          'ip' => '192.168.1.100',
+          'interface' => 'Bridge0',
+          'active' => true,
+          'registered' => true,
+          'rxbytes' => 1_000_000,
+          'txbytes' => 500_000
+        },
+        {
+          'mac' => '11:22:33:44:55:66',
+          'hostname' => 'laptop',
+          'ip' => '192.168.1.101',
+          'interface' => 'Bridge0',
+          'active' => false,
+          'registered' => true
+        }
+      ]
     end
 
     before do
-      stub_request(:get, 'http://192.168.1.1/rci/show/ip/hotspot')
-        .to_return(status: 200, body: hotspot_response.to_json)
+      stub_devices_endpoints(hotspot_response)
     end
 
     it 'returns normalized list of devices' do
@@ -55,10 +60,7 @@ RSpec.describe Keenetic::Resources::Devices do
 
     context 'when response has single host (not array)' do
       before do
-        stub_request(:get, 'http://192.168.1.1/rci/show/ip/hotspot')
-          .to_return(status: 200, body: {
-            'host' => { 'mac' => 'AA:BB:CC:DD:EE:FF', 'name' => 'Single Device' }
-          }.to_json)
+        stub_devices_endpoints({ 'host' => { 'mac' => 'AA:BB:CC:DD:EE:FF', 'name' => 'Single Device' } })
       end
 
       it 'handles single device response' do
@@ -70,8 +72,7 @@ RSpec.describe Keenetic::Resources::Devices do
 
     context 'when response is empty' do
       before do
-        stub_request(:get, 'http://192.168.1.1/rci/show/ip/hotspot')
-          .to_return(status: 200, body: '{}')
+        stub_devices_endpoints(nil)
       end
 
       it 'returns empty array' do
@@ -82,13 +83,10 @@ RSpec.describe Keenetic::Resources::Devices do
 
   describe '#find' do
     before do
-      stub_request(:get, 'http://192.168.1.1/rci/show/ip/hotspot')
-        .to_return(status: 200, body: {
-          'host' => [
-            { 'mac' => 'AA:BB:CC:DD:EE:FF', 'name' => 'Device 1' },
-            { 'mac' => '11:22:33:44:55:66', 'name' => 'Device 2' }
-          ]
-        }.to_json)
+      stub_devices_endpoints([
+        { 'mac' => 'AA:BB:CC:DD:EE:FF', 'name' => 'Device 1' },
+        { 'mac' => '11:22:33:44:55:66', 'name' => 'Device 2' }
+      ])
     end
 
     it 'finds device by MAC address' do
@@ -169,13 +167,10 @@ RSpec.describe Keenetic::Resources::Devices do
 
   describe '#active' do
     before do
-      stub_request(:get, 'http://192.168.1.1/rci/show/ip/hotspot')
-        .to_return(status: 200, body: {
-          'host' => [
-            { 'mac' => 'AA:BB:CC:DD:EE:FF', 'name' => 'Active', 'active' => true },
-            { 'mac' => '11:22:33:44:55:66', 'name' => 'Inactive', 'active' => false }
-          ]
-        }.to_json)
+      stub_devices_endpoints([
+        { 'mac' => 'AA:BB:CC:DD:EE:FF', 'name' => 'Active', 'active' => true },
+        { 'mac' => '11:22:33:44:55:66', 'name' => 'Inactive', 'active' => false }
+      ])
     end
 
     it 'returns only active devices' do
