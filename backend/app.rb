@@ -1,6 +1,6 @@
 require 'roda'
 require 'json'
-require_relative 'lib/keenetic'
+require_relative 'gems/keenetic/lib/keenetic'
 
 # Configure Keenetic library with environment variables
 Keenetic.configure do |config|
