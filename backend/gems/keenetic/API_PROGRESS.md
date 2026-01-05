@@ -32,7 +32,7 @@ Implementation status according to [KEENETIC_API.md](./KEENETIC_API.md) specific
 - [x] List Active Devices (`client.devices.active`)
 - [x] Find Device (`client.devices.find`)
 - [x] Update Device (`client.devices.update`)
-- [ ] Delete Device Registration
+- [x] Delete Device Registration (`client.devices.delete`)
 
 ## 5. Network Interfaces
 

@@ -146,5 +146,36 @@ RSpec.describe Keenetic::Resources::Devices do
       expect(result.first[:name]).to eq('Active')
     end
   end
+
+  describe '#delete' do
+    it 'sends delete request with mac and no flag' do
+      delete_stub = stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
+        .with(body: { mac: 'AA:BB:CC:DD:EE:FF', no: true }.to_json)
+        .to_return(status: 200, body: '{}')
+
+      devices.delete(mac: 'AA:BB:CC:DD:EE:FF')
+
+      expect(delete_stub).to have_been_requested
+    end
+
+    it 'normalizes MAC address to uppercase' do
+      delete_stub = stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
+        .with(body: { mac: 'AA:BB:CC:DD:EE:FF', no: true }.to_json)
+        .to_return(status: 200, body: '{}')
+
+      devices.delete(mac: 'aa:bb:cc:dd:ee:ff')
+
+      expect(delete_stub).to have_been_requested
+    end
+
+    it 'returns API response' do
+      stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
+        .to_return(status: 200, body: '{}')
+
+      result = devices.delete(mac: 'AA:BB:CC:DD:EE:FF')
+
+      expect(result).to eq({})
+    end
+  end
 end
 

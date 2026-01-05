@@ -30,6 +30,13 @@ module Keenetic
         all.select { |d| d[:active] }
       end
 
+      # Delete device registration (remove from registered list)
+      # @param mac [String] Device MAC address
+      # @return [Hash] API response
+      def delete(mac:)
+        post('/rci/ip/hotspot/host', { mac: mac.upcase, no: true })
+      end
+
       private
 
       def normalize_devices(response)
