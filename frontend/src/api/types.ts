@@ -13,6 +13,7 @@ export interface Device {
   static_ip: string | null;
   interface: string | DeviceInterface | null;
   via: string | null;
+  wifi_ap: string | null;
   active: boolean;
   registered: boolean;
   access: string | null;
@@ -143,6 +144,31 @@ export interface AccessPoint {
 
 export interface AccessPointsResponse {
   access_points: AccessPoint[];
+  count: number;
+  timestamp: string;
+}
+
+// Mesh Wi-Fi System types
+export interface MeshMember {
+  id: string;
+  mac: string | null;
+  name: string | null;
+  model: string | null;
+  hw_id: string | null;
+  hw_version: string | null;
+  mode: 'controller' | 'extender' | string | null;
+  via: string | null;
+  ip: string | null;
+  version: string | null;
+  online: boolean;
+  uptime: number | null;
+  clients_count: number | null;
+  connection_speed: string | null;
+  alert: boolean | null;
+}
+
+export interface MeshMembersResponse {
+  members: MeshMember[];
   count: number;
   timestamp: string;
 }

@@ -46,6 +46,56 @@ module Keenetic
         extract_wifi_interfaces(response)
       end
 
+      # Get Mesh Wi-Fi System members (controller + extenders).
+      #
+      # == Keenetic API Request
+      #   POST /rci/
+      #   Body: [{"show":{"mws":{"member":{}}}}, {"show":{"mws":{"status":{}}}}]
+      #
+      # == Response Structure from API
+      #   Member data includes:
+      #     - known: true/false (if node is registered)
+      #     - online: true/false
+      #     - cid: unique controller ID
+      #     - mac: device MAC address
+      #     - hw-id: hardware ID
+      #     - hw-version: hardware version
+      #     - model: device model (e.g., "KN-4010", "KN-1613")
+      #     - name: device name
+      #     - mode: operating mode ("controller", "extender")
+      #     - via: connection path (e.g., "Ethernet", "WifiMaster1")
+      #     - ip: device IP address
+      #     - uptime: uptime in seconds
+      #     - version: firmware version
+      #
+      # @return [Array<Hash>] List of mesh nodes (controller + extenders)
+      # @example
+      #   nodes = client.wifi.mesh_members
+      #   # => [{ id: "abc123", name: "Main Router", mode: "controller", ... }]
+      #
+      def mesh_members
+        responses = client.batch([
+          { 'show' => { 'mws' => { 'member' => {} } } },
+          { 'show' => { 'version' => {} } },
+          { 'show' => { 'system' => {} } },
+          { 'show' => { 'associations' => {} } }
+        ])
+        
+        members_response = responses[0] || {}
+        version_response = responses[1] || {}
+        system_response = responses[2] || {}
+        associations_response = responses[3] || {}
+        
+        # Get extenders from mws member
+        extenders = normalize_mesh_members(members_response)
+        
+        # Build controller from version/system info
+        controller = build_controller(version_response, system_response, associations_response)
+        
+        # Return controller first, then extenders
+        [controller, *extenders].compact
+      end
+
       # Get connected Wi-Fi clients (associations).
       #
       # == Keenetic API Request
@@ -252,6 +302,72 @@ module Keenetic
           ht: station['ht'],
           mode: station['mode'],
           gi: station['gi']
+        }
+      end
+
+      def normalize_mesh_members(members_response)
+        # Response is nested: { "show" => { "mws" => { "member" => [...] } } }
+        members_data = members_response.dig('show', 'mws', 'member') if members_response.is_a?(Hash)
+        return [] unless members_data
+
+        members = members_data.is_a?(Array) ? members_data : [members_data]
+        
+        members.filter_map { |member| normalize_mesh_member(member) }
+      end
+
+      def build_controller(version_response, system_response, associations_response)
+        version = version_response.dig('show', 'version') || {}
+        system = system_response.dig('show', 'system') || {}
+        
+        # Count associations (wifi clients connected to controller)
+        stations = associations_response.dig('show', 'associations', 'station') || []
+        stations = [stations] unless stations.is_a?(Array)
+        client_count = stations.size
+        
+        return nil if version.empty?
+        
+        {
+          id: 'controller',
+          mac: version['mac'],
+          name: system['name'] || version['description'] || version['model'],
+          model: "#{version['model']} (#{version['hw_id']})",
+          hw_id: version['hw_id'],
+          hw_version: version['hw_version'],
+          mode: 'controller',
+          via: nil, # Controller doesn't have upstream
+          ip: nil, # Controller is the gateway
+          version: version['release'],
+          online: true,
+          uptime: system['uptime'],
+          clients_count: client_count,
+          connection_speed: nil,
+          alert: false
+        }
+      end
+
+      def normalize_mesh_member(member)
+        return nil unless member.is_a?(Hash)
+
+        cid = member['cid']
+        system_info = member['system'] || {}
+        backhaul_info = member['backhaul'] || {}
+        
+        {
+          id: cid,
+          mac: member['mac'],
+          name: member['known-host'] || member['model'],
+          model: member['model'],
+          hw_id: member['hw_id'] || member['hw-id'],
+          hw_version: member['hw-version'],
+          mode: member['mode'], # "controller" or "extender"
+          via: backhaul_info['uplink'], # Connection method (FastEthernet0/Vlan1, WifiMaster1, etc.)
+          ip: member['ip'],
+          version: member['fw'],
+          online: true, # Members in the list are online
+          uptime: system_info['uptime']&.to_i,
+          clients_count: member['associations'],
+          connection_speed: backhaul_info['speed'],
+          alert: false
         }
       end
     end

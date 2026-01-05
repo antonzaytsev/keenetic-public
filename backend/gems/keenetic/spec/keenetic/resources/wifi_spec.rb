@@ -240,5 +240,250 @@ RSpec.describe Keenetic::Resources::WiFi do
       expect(disable_stub).to have_been_requested
     end
   end
+
+  describe '#mesh_members' do
+    let(:mws_member_response) do
+      {
+        'show' => {
+          'mws' => {
+            'member' => [
+              {
+                'cid' => 'extender-1-uuid',
+                'model' => 'Air (KN-1613)',
+                'mac' => '50:FF:20:77:30:84',
+                'known-host' => 'Keenetic Air 1',
+                'ip' => '192.168.0.240',
+                'mode' => 'extender',
+                'hw-id' => 'KN-1613',
+                'fw' => '4.3.6.3',
+                'associations' => 5,
+                'system' => {
+                  'cpuload' => 4,
+                  'memory' => '39384/131072',
+                  'uptime' => '83013'
+                },
+                'backhaul' => {
+                  'uplink' => 'FastEthernet0/Vlan1',
+                  'speed' => '100',
+                  'duplex' => 'full'
+                }
+              },
+              {
+                'cid' => 'extender-2-uuid',
+                'model' => 'Air (KN-1613)',
+                'mac' => '50:FF:20:77:35:DF',
+                'known-host' => 'Keenetic Air 2',
+                'ip' => '192.168.0.241',
+                'mode' => 'extender',
+                'hw-id' => 'KN-1613',
+                'fw' => '4.3.6.3',
+                'associations' => 20,
+                'system' => {
+                  'cpuload' => 25,
+                  'uptime' => '207037'
+                },
+                'backhaul' => {
+                  'uplink' => 'WifiMaster1/AccessPoint0',
+                  'speed' => '866'
+                }
+              }
+            ]
+          }
+        }
+      }
+    end
+
+    let(:version_response) do
+      {
+        'show' => {
+          'version' => {
+            'model' => 'Racer',
+            'hw_id' => 'KN-4010',
+            'hw_version' => '10408000',
+            'mac' => '50:FF:20:DD:0B:BB',
+            'release' => '4.03.C.6.3-9',
+            'description' => 'Keenetic Racer'
+          }
+        }
+      }
+    end
+
+    let(:system_response) do
+      {
+        'show' => {
+          'system' => {
+            'name' => 'Main Router',
+            'uptime' => '86400'
+          }
+        }
+      }
+    end
+
+    let(:associations_response) do
+      {
+        'show' => {
+          'associations' => {
+            'station' => [
+              { 'mac' => 'AA:BB:CC:DD:EE:01' },
+              { 'mac' => 'AA:BB:CC:DD:EE:02' },
+              { 'mac' => 'AA:BB:CC:DD:EE:03' }
+            ]
+          }
+        }
+      }
+    end
+
+    before do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [
+          { 'show' => { 'mws' => { 'member' => {} } } },
+          { 'show' => { 'version' => {} } },
+          { 'show' => { 'system' => {} } },
+          { 'show' => { 'associations' => {} } }
+        ].to_json)
+        .to_return(status: 200, body: [
+          mws_member_response,
+          version_response,
+          system_response,
+          associations_response
+        ].to_json)
+    end
+
+    it 'returns controller and extenders' do
+      result = wifi.mesh_members
+
+      expect(result.size).to eq(3)
+      expect(result.map { |m| m[:mode] }).to eq(['controller', 'extender', 'extender'])
+    end
+
+    it 'returns controller as first element' do
+      result = wifi.mesh_members
+      controller = result.first
+
+      expect(controller[:id]).to eq('controller')
+      expect(controller[:mode]).to eq('controller')
+      expect(controller[:name]).to eq('Main Router')
+      expect(controller[:model]).to eq('Racer (KN-4010)')
+      expect(controller[:version]).to eq('4.03.C.6.3-9')
+      expect(controller[:clients_count]).to eq(3)
+      expect(controller[:online]).to be true
+    end
+
+    it 'normalizes extender data correctly' do
+      result = wifi.mesh_members
+      extender1 = result[1]
+
+      expect(extender1[:id]).to eq('extender-1-uuid')
+      expect(extender1[:mac]).to eq('50:FF:20:77:30:84')
+      expect(extender1[:name]).to eq('Keenetic Air 1')
+      expect(extender1[:model]).to eq('Air (KN-1613)')
+      expect(extender1[:mode]).to eq('extender')
+      expect(extender1[:ip]).to eq('192.168.0.240')
+      expect(extender1[:version]).to eq('4.3.6.3')
+      expect(extender1[:uptime]).to eq(83013)
+      expect(extender1[:clients_count]).to eq(5)
+      expect(extender1[:via]).to eq('FastEthernet0/Vlan1')
+      expect(extender1[:connection_speed]).to eq('100')
+      expect(extender1[:online]).to be true
+    end
+
+    it 'handles extender connected via Wi-Fi' do
+      result = wifi.mesh_members
+      extender2 = result[2]
+
+      expect(extender2[:name]).to eq('Keenetic Air 2')
+      expect(extender2[:via]).to eq('WifiMaster1/AccessPoint0')
+      expect(extender2[:connection_speed]).to eq('866')
+    end
+
+    context 'when no extenders exist' do
+      let(:mws_member_response) do
+        { 'show' => { 'mws' => { 'member' => [] } } }
+      end
+
+      it 'returns only controller' do
+        result = wifi.mesh_members
+
+        expect(result.size).to eq(1)
+        expect(result.first[:mode]).to eq('controller')
+      end
+    end
+
+    context 'when mws member is a single object instead of array' do
+      let(:mws_member_response) do
+        {
+          'show' => {
+            'mws' => {
+              'member' => {
+                'cid' => 'single-extender-uuid',
+                'model' => 'Air (KN-1613)',
+                'mac' => '50:FF:20:77:30:84',
+                'known-host' => 'Single Extender',
+                'ip' => '192.168.0.240',
+                'mode' => 'extender',
+                'hw-id' => 'KN-1613',
+                'fw' => '4.3.6.3',
+                'associations' => 3,
+                'system' => { 'uptime' => '1000' },
+                'backhaul' => { 'uplink' => 'FastEthernet0/Vlan1', 'speed' => '100' }
+              }
+            }
+          }
+        }
+      end
+
+      it 'handles single member as array' do
+        result = wifi.mesh_members
+
+        expect(result.size).to eq(2)
+        expect(result[1][:name]).to eq('Single Extender')
+      end
+    end
+
+    context 'when version response is empty' do
+      let(:version_response) do
+        { 'show' => { 'version' => {} } }
+      end
+
+      it 'returns only extenders without controller' do
+        result = wifi.mesh_members
+
+        expect(result.size).to eq(2)
+        expect(result.all? { |m| m[:mode] == 'extender' }).to be true
+      end
+    end
+
+    context 'when associations response has single station' do
+      let(:associations_response) do
+        {
+          'show' => {
+            'associations' => {
+              'station' => { 'mac' => 'AA:BB:CC:DD:EE:01' }
+            }
+          }
+        }
+      end
+
+      it 'counts single client correctly' do
+        result = wifi.mesh_members
+        controller = result.first
+
+        expect(controller[:clients_count]).to eq(1)
+      end
+    end
+
+    context 'when associations response is empty' do
+      let(:associations_response) do
+        { 'show' => { 'associations' => {} } }
+      end
+
+      it 'returns zero client count for controller' do
+        result = wifi.mesh_members
+        controller = result.first
+
+        expect(controller[:clients_count]).to eq(0)
+      end
+    end
+  end
 end
 

@@ -102,6 +102,56 @@
   margin-bottom: 1.5rem;
 }
 
+/* Mesh Wi-Fi card */
+.mesh-card {
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.mesh-node-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.mesh-node-name__text {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.mesh-node-name__model {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.mesh-clients {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent-success);
+}
+
+.mesh-uptime {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.mesh-ip {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.mesh-via {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.mesh-version {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 /* Interfaces card */
 .interfaces-card {
   overflow: hidden;

@@ -204,6 +204,17 @@ class App < Roda
             }
           end
         end
+
+        r.is 'mesh' do
+          r.get do
+            members = keenetic_client.wifi.mesh_members
+            { 
+              members: members,
+              count: members.size,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
       end
 
       # Policies endpoints

@@ -69,6 +69,17 @@
   font-style: italic;
 }
 
+/* Device connection (WiFi/Wired) */
+.device-wifi {
+  font-size: 0.8125rem;
+  color: var(--accent-primary);
+}
+
+.device-wired {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
 /* Error state */
 .devices-error {
   text-align: center;

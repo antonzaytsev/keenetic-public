@@ -230,6 +230,10 @@ module Keenetic
         dhcp_info = host['dhcp']
         is_static = dhcp_info.is_a?(Hash) && dhcp_info['static'] == true
         static_ip = is_static ? host['ip'] : nil
+        
+        # WiFi access point info - can be in mws.ap or ap field
+        mws_info = host['mws']
+        wifi_ap = mws_info.is_a?(Hash) ? mws_info['ap'] : host['ap']
 
         {
           mac: mac,
@@ -239,6 +243,7 @@ module Keenetic
           static_ip: static_ip,
           interface: host['interface'],
           via: host['via'],
+          wifi_ap: wifi_ap,
           active: host['active'] == true || host['active'] == 'true',
           registered: host['registered'] == true || host['registered'] == 'true',
           access: host['access'],

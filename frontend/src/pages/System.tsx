@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { Header } from '../components/layout';
-import { Card, Progress, Chart } from '../components/ui';
-import { useSystemInfo, useSystemResources } from '../hooks';
+import { Card, Progress, Chart, Table, Badge, type Column } from '../components/ui';
+import { useSystemInfo, useSystemResources, useMeshMembers } from '../hooks';
+import type { MeshMember } from '../api';
 import './System.css';
 
 function formatUptime(seconds: number | null): string {
@@ -20,14 +21,93 @@ function formatUptime(seconds: number | null): string {
   return parts.join(' ') || '0s';
 }
 
+function formatConnection(via: string | null): string {
+  if (!via) return '-';
+  if (via === 'Ethernet' || via.includes('Ethernet')) return '🔌 Ethernet';
+  if (via.includes('WifiMaster0')) return '📶 2.4 GHz';
+  if (via.includes('WifiMaster1')) return '📶 5 GHz';
+  return via;
+}
+
 export function System() {
   const { data: systemInfo, isLoading: infoLoading } = useSystemInfo();
   const { data: resources } = useSystemResources();
+  const { data: meshData, isLoading: meshLoading } = useMeshMembers();
 
   const getResourceData = useCallback(() => ({
     cpu: resources?.resources.cpu?.load_percent ?? 0,
     memory: resources?.resources.memory?.used_percent ?? 0,
   }), [resources]);
+
+  const meshMembers = meshData?.members ?? [];
+
+  const meshColumns: Column<MeshMember>[] = [
+    {
+      key: 'status',
+      header: 'Status',
+      width: '80px',
+      render: (node) => (
+        <Badge variant={node.online ? 'success' : 'neutral'} dot size="sm">
+          {node.online ? 'Online' : 'Offline'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Node Name',
+      render: (node) => (
+        <div className="mesh-node-name">
+          <span className="mesh-node-name__text">{node.name || 'Unknown'}</span>
+          <span className="mesh-node-name__model">{node.model}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'mode',
+      header: 'Role',
+      render: (node) => (
+        <Badge variant={node.mode === 'controller' ? 'info' : 'neutral'} size="sm">
+          {node.mode === 'controller' ? 'Controller' : 'Extender'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'clients',
+      header: 'Clients',
+      align: 'center',
+      render: (node) => (
+        <span className="mesh-clients">{node.clients_count ?? 0}</span>
+      ),
+    },
+    {
+      key: 'uptime',
+      header: 'Uptime',
+      render: (node) => (
+        <span className="mesh-uptime">{formatUptime(node.uptime)}</span>
+      ),
+    },
+    {
+      key: 'ip',
+      header: 'IP Address',
+      render: (node) => (
+        <span className="mesh-ip">{node.ip || '-'}</span>
+      ),
+    },
+    {
+      key: 'via',
+      header: 'Connection',
+      render: (node) => (
+        <span className="mesh-via">{formatConnection(node.via)}</span>
+      ),
+    },
+    {
+      key: 'version',
+      header: 'Version',
+      render: (node) => (
+        <span className="mesh-version">{node.version || '-'}</span>
+      ),
+    },
+  ];
 
   return (
     <div className="system-page">
@@ -110,6 +190,21 @@ export function System() {
           height={220}
           refreshInterval={3000}
         />
+      </Card>
+
+      {/* Mesh Wi-Fi System */}
+      <Card title="Mesh Wi-Fi System" className="mesh-card" padding="none">
+        {meshLoading ? (
+          <div className="info-loading">Loading mesh network...</div>
+        ) : meshMembers.length > 0 ? (
+          <Table
+            columns={meshColumns}
+            data={meshMembers}
+            keyExtractor={(node) => node.id}
+          />
+        ) : (
+          <div className="info-empty">No mesh network configured</div>
+        )}
       </Card>
     </div>
   );

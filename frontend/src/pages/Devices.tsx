@@ -18,6 +18,19 @@ function formatBytes(bytes: number | null): string {
   return `${value.toFixed(1)} ${units[i]}`;
 }
 
+function formatWifiAp(ap: string | null): string {
+  if (!ap) return '-';
+  // Map common AP patterns to friendly names
+  // WifiMaster0 = 2.4GHz on main router, WifiMaster1 = 5GHz on main router
+  // AccessPoint0 = main network, AccessPoint2 = guest, etc.
+  if (ap.includes('WifiMaster0/AccessPoint0')) return '📶 Main 2.4G';
+  if (ap.includes('WifiMaster1/AccessPoint0')) return '📶 Main 5G';
+  if (ap.includes('WifiMaster0/AccessPoint2')) return '📶 Guest 2.4G';
+  if (ap.includes('WifiMaster1/AccessPoint2')) return '📶 Guest 5G';
+  // Return shortened version for unknown patterns
+  return ap.replace('WifiMaster', 'WiFi').replace('AccessPoint', 'AP');
+}
+
 export function Devices() {
   const navigate = useNavigate();
   const { data, isLoading, error } = useDevices();
@@ -93,13 +106,18 @@ export function Devices() {
       ),
     },
     {
-      key: 'interface',
-      header: 'Interface',
+      key: 'wifi_ap',
+      header: 'Connected To',
       render: (device) => {
+        // Show WiFi AP if available, otherwise show interface
+        if (device.wifi_ap) {
+          return <span className="device-wifi">{formatWifiAp(device.wifi_ap)}</span>;
+        }
+        // Fallback to interface for wired devices
         const iface = device.interface;
         if (!iface) return '-';
-        if (typeof iface === 'string') return iface;
-        return iface.name || iface.id || '-';
+        const ifaceName = typeof iface === 'string' ? iface : (iface.name || iface.id || '-');
+        return <span className="device-wired">🔌 {ifaceName}</span>;
       },
     },
     {
