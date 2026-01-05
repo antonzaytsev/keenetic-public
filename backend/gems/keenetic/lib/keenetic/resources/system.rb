@@ -19,6 +19,20 @@ module Keenetic
         response['uptime'] if response.is_a?(Hash)
       end
 
+      # Get default system configuration values
+      # @return [Hash] Default configuration settings
+      def defaults
+        response = get('/rci/show/defaults')
+        normalize_defaults(response)
+      end
+
+      # Get license status and enabled features
+      # @return [Hash] License information
+      def license
+        response = get('/rci/show/license')
+        normalize_license(response)
+      end
+
       private
 
       def normalize_resources(response)
@@ -88,12 +102,59 @@ module Keenetic
           hw_id: response['hw_id'],
           firmware: response['title'],
           firmware_version: response['release'],
-          ndm_version: response['ndm']['exact'] || response['ndm']['version'],
+          ndm_version: response.dig('ndm', 'exact') || response.dig('ndm', 'version'),
           arch: response['arch'],
-          ndw_version: response['ndw']['version'],
+          ndw_version: response.dig('ndw', 'version'),
           components: response['components'],
           sandbox: response['sandbox']
         }
+      end
+
+      def normalize_defaults(response)
+        return {} unless response.is_a?(Hash)
+
+        deep_normalize_keys(response)
+      end
+
+      def normalize_license(response)
+        return {} unless response.is_a?(Hash)
+
+        result = {
+          valid: normalize_boolean(response['valid']),
+          active: normalize_boolean(response['active']),
+          expires: response['expires'],
+          type: response['type'],
+          features: normalize_features(response['features']),
+          services: normalize_services(response['services'])
+        }
+
+        # Remove nil values for cleaner response
+        result.compact
+      end
+
+      def normalize_features(features)
+        return [] unless features.is_a?(Array)
+
+        features.map do |feature|
+          if feature.is_a?(Hash)
+            normalize_keys(feature)
+          else
+            feature
+          end
+        end
+      end
+
+      def normalize_services(services)
+        return [] unless services.is_a?(Array)
+
+        services.map do |service|
+          if service.is_a?(Hash)
+            result = normalize_keys(service)
+            normalize_booleans(result, %i[enabled active])
+          else
+            service
+          end
+        end
       end
     end
   end

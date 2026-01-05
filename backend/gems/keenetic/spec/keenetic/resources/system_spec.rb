@@ -115,5 +115,180 @@ RSpec.describe Keenetic::Resources::System do
       expect(system_resource.uptime).to eq(123456)
     end
   end
+
+  describe '#defaults' do
+    let(:defaults_response) do
+      {
+        'system-name' => 'Keenetic',
+        'domain-name' => 'local',
+        'language' => 'en',
+        'ntp-server' => 'pool.ntp.org',
+        'auto-update' => true,
+        'led-mode' => 'auto'
+      }
+    end
+
+    before do
+      stub_request(:get, 'http://192.168.1.1/rci/show/defaults')
+        .to_return(status: 200, body: defaults_response.to_json)
+    end
+
+    it 'returns normalized default settings' do
+      result = system_resource.defaults
+
+      expect(result[:system_name]).to eq('Keenetic')
+      expect(result[:domain_name]).to eq('local')
+      expect(result[:language]).to eq('en')
+      expect(result[:ntp_server]).to eq('pool.ntp.org')
+      expect(result[:auto_update]).to be true
+      expect(result[:led_mode]).to eq('auto')
+    end
+
+    it 'converts kebab-case keys to snake_case' do
+      result = system_resource.defaults
+
+      expect(result.keys).to all(be_a(Symbol))
+      expect(result.keys).not_to include(:system_name.to_s.tr('_', '-'))
+    end
+
+    context 'when response is empty' do
+      before do
+        stub_request(:get, 'http://192.168.1.1/rci/show/defaults')
+          .to_return(status: 200, body: '{}')
+      end
+
+      it 'returns empty hash' do
+        expect(system_resource.defaults).to eq({})
+      end
+    end
+
+    context 'when response has nested values' do
+      before do
+        stub_request(:get, 'http://192.168.1.1/rci/show/defaults')
+          .to_return(status: 200, body: {
+            'network-settings' => {
+              'default-gateway' => '192.168.1.1',
+              'dns-server' => '8.8.8.8'
+            }
+          }.to_json)
+      end
+
+      it 'normalizes nested keys' do
+        result = system_resource.defaults
+
+        expect(result[:network_settings]).to be_a(Hash)
+        expect(result[:network_settings][:default_gateway]).to eq('192.168.1.1')
+        expect(result[:network_settings][:dns_server]).to eq('8.8.8.8')
+      end
+    end
+  end
+
+  describe '#license' do
+    let(:license_response) do
+      {
+        'valid' => true,
+        'active' => 'true',
+        'expires' => '2025-12-31',
+        'type' => 'standard',
+        'features' => [
+          { 'name' => 'vpn-server', 'enabled' => true },
+          { 'name' => 'parental-control', 'enabled' => 'true' }
+        ],
+        'services' => [
+          { 'name' => 'keendns', 'enabled' => true, 'active' => 'true' },
+          { 'name' => 'safedns', 'enabled' => false }
+        ]
+      }
+    end
+
+    before do
+      stub_request(:get, 'http://192.168.1.1/rci/show/license')
+        .to_return(status: 200, body: license_response.to_json)
+    end
+
+    it 'returns normalized license info' do
+      result = system_resource.license
+
+      expect(result[:valid]).to be true
+      expect(result[:active]).to be true
+      expect(result[:expires]).to eq('2025-12-31')
+      expect(result[:type]).to eq('standard')
+    end
+
+    it 'normalizes features array' do
+      result = system_resource.license
+
+      expect(result[:features]).to be_an(Array)
+      expect(result[:features].size).to eq(2)
+      expect(result[:features][0][:name]).to eq('vpn-server')
+      expect(result[:features][0][:enabled]).to be true
+    end
+
+    it 'normalizes services with boolean values' do
+      result = system_resource.license
+
+      expect(result[:services]).to be_an(Array)
+      expect(result[:services][0][:name]).to eq('keendns')
+      expect(result[:services][0][:enabled]).to be true
+      expect(result[:services][0][:active]).to be true
+      expect(result[:services][1][:enabled]).to be false
+    end
+
+    it 'handles string boolean values' do
+      result = system_resource.license
+
+      # 'true' string should be converted to boolean true
+      expect(result[:active]).to be true
+      expect(result[:services][0][:active]).to be true
+    end
+
+    context 'when license is not valid' do
+      before do
+        stub_request(:get, 'http://192.168.1.1/rci/show/license')
+          .to_return(status: 200, body: {
+            'valid' => false,
+            'active' => false
+          }.to_json)
+      end
+
+      it 'returns invalid license info' do
+        result = system_resource.license
+
+        expect(result[:valid]).to be false
+        expect(result[:active]).to be false
+      end
+    end
+
+    context 'when response is empty' do
+      before do
+        stub_request(:get, 'http://192.168.1.1/rci/show/license')
+          .to_return(status: 200, body: '{}')
+      end
+
+      it 'returns hash with empty arrays for features and services' do
+        result = system_resource.license
+        expect(result[:features]).to eq([])
+        expect(result[:services]).to eq([])
+      end
+    end
+
+    context 'when features is nil or missing' do
+      before do
+        stub_request(:get, 'http://192.168.1.1/rci/show/license')
+          .to_return(status: 200, body: {
+            'valid' => true,
+            'type' => 'basic'
+          }.to_json)
+      end
+
+      it 'returns empty features array' do
+        result = system_resource.license
+
+        expect(result[:valid]).to be true
+        expect(result[:features]).to eq([])
+        expect(result[:services]).to eq([])
+      end
+    end
+  end
 end
 

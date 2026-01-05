@@ -46,6 +46,21 @@ module Keenetic
       request(:post, path, body: body)
     end
 
+    # Execute multiple commands in a single request (batch request)
+    # @param commands [Array<Hash>] Array of command hashes
+    # @return [Array] Array of responses in the same order as commands
+    # @example
+    #   client.batch([
+    #     { show: { system: {} } },
+    #     { show: { version: {} } }
+    #   ])
+    def batch(commands)
+      raise ArgumentError, 'Commands must be an array' unless commands.is_a?(Array)
+      raise ArgumentError, 'Commands array cannot be empty' if commands.empty?
+
+      request(:post, '/rci/', body: commands)
+    end
+
     def authenticated?
       @authenticated
     end

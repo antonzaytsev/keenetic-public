@@ -86,6 +86,125 @@ RSpec.describe Keenetic::Client do
         )
       end
     end
+
+    context 'when connection times out during challenge' do
+      it 'raises TimeoutError with auth context' do
+        stub_request(:get, 'http://192.168.1.1/auth')
+          .to_timeout
+
+        expect { client.authenticate! }.to raise_error(
+          Keenetic::TimeoutError,
+          /timed out/
+        )
+      end
+    end
+
+    context 'when connection fails' do
+      it 'raises error on connection refusal' do
+        stub_request(:get, 'http://192.168.1.1/auth')
+          .to_raise(Errno::ECONNREFUSED)
+
+        # WebMock raises Errno::ECONNREFUSED directly, not wrapped in response
+        expect { client.authenticate! }.to raise_error(Errno::ECONNREFUSED)
+      end
+    end
+
+    context 'when unexpected status code returned' do
+      it 'raises AuthenticationError for 500 response' do
+        stub_request(:get, 'http://192.168.1.1/auth')
+          .to_return(status: 500, body: 'Internal Error')
+
+        expect { client.authenticate! }.to raise_error(
+          Keenetic::AuthenticationError,
+          /Unexpected response.*HTTP 500/
+        )
+      end
+    end
+
+    context 'with only X-NDM-Challenge header (missing realm)' do
+      it 'raises AuthenticationError' do
+        stub_request(:get, 'http://192.168.1.1/auth')
+          .to_return(status: 401, headers: { 'X-NDM-Challenge' => 'challenge123' })
+
+        expect { client.authenticate! }.to raise_error(
+          Keenetic::AuthenticationError,
+          /Missing challenge headers/
+        )
+      end
+    end
+
+    context 'cookie handling' do
+      it 'stores and sends session cookies' do
+        stub_request(:get, 'http://192.168.1.1/auth')
+          .to_return(
+            status: 401,
+            headers: {
+              'X-NDM-Challenge' => 'test_challenge',
+              'X-NDM-Realm' => 'KEENETIC',
+              'Set-Cookie' => 'ndm_session=initial_session; path=/'
+            }
+          )
+
+        auth_stub = stub_request(:post, 'http://192.168.1.1/auth')
+          .with(headers: { 'Cookie' => /ndm_session=initial_session/ })
+          .to_return(
+            status: 200,
+            headers: { 'Set-Cookie' => 'ndm_session=authenticated; path=/' },
+            body: '{}'
+          )
+
+        client.authenticate!
+
+        expect(auth_stub).to have_been_requested
+      end
+
+      it 'handles multiple Set-Cookie headers' do
+        stub_request(:get, 'http://192.168.1.1/auth')
+          .to_return(
+            status: 401,
+            headers: {
+              'X-NDM-Challenge' => 'test_challenge',
+              'X-NDM-Realm' => 'KEENETIC',
+              'Set-Cookie' => ['session=abc; path=/', 'token=xyz; path=/']
+            }
+          )
+
+        auth_stub = stub_request(:post, 'http://192.168.1.1/auth')
+          .with(headers: { 'Cookie' => /session=abc.*token=xyz|token=xyz.*session=abc/ })
+          .to_return(status: 200, body: '{}')
+
+        client.authenticate!
+
+        expect(auth_stub).to have_been_requested
+      end
+    end
+
+    context 'thread safety' do
+      it 'prevents concurrent authentication attempts' do
+        call_count = 0
+
+        stub_request(:get, 'http://192.168.1.1/auth')
+          .to_return(
+            status: 401,
+            headers: {
+              'X-NDM-Challenge' => 'challenge',
+              'X-NDM-Realm' => 'KEENETIC'
+            }
+          )
+
+        stub_request(:post, 'http://192.168.1.1/auth')
+          .to_return { call_count += 1; { status: 200, body: '{}' } }
+
+        threads = 5.times.map do
+          Thread.new { client.authenticate! }
+        end
+
+        threads.each(&:join)
+
+        # Should only authenticate once due to mutex
+        expect(call_count).to eq(1)
+      end
+    end
   end
 
   describe '#get' do
@@ -122,6 +241,83 @@ RSpec.describe Keenetic::Client do
 
       result = client.post('/rci/ip/hotspot/host', mac: 'AA:BB:CC:DD:EE:FF', name: 'Test Device')
       expect(result).to eq({ 'success' => true })
+    end
+  end
+
+  describe '#batch' do
+    before { stub_keenetic_auth }
+
+    it 'sends array of commands to /rci/' do
+      batch_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(
+          body: [
+            { show: { system: {} } },
+            { show: { version: {} } }
+          ].to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        )
+        .to_return(
+          status: 200,
+          body: [
+            { 'cpuload' => 15, 'uptime' => 86400 },
+            { 'model' => 'Keenetic Viva', 'release' => '4.01.C.7.0-0' }
+          ].to_json
+        )
+
+      result = client.batch([
+        { show: { system: {} } },
+        { show: { version: {} } }
+      ])
+
+      expect(batch_stub).to have_been_requested
+      expect(result).to be_an(Array)
+      expect(result.size).to eq(2)
+      expect(result[0]['cpuload']).to eq(15)
+      expect(result[1]['model']).to eq('Keenetic Viva')
+    end
+
+    it 'handles single command batch' do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [{ show: { system: {} } }].to_json)
+        .to_return(status: 200, body: [{ 'cpuload' => 10 }].to_json)
+
+      result = client.batch([{ show: { system: {} } }])
+
+      expect(result).to eq([{ 'cpuload' => 10 }])
+    end
+
+    it 'raises ArgumentError for non-array input' do
+      expect { client.batch({ show: { system: {} } }) }
+        .to raise_error(ArgumentError, 'Commands must be an array')
+    end
+
+    it 'raises ArgumentError for empty array' do
+      expect { client.batch([]) }
+        .to raise_error(ArgumentError, 'Commands array cannot be empty')
+    end
+
+    it 'handles mixed read and write commands' do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(
+          body: [
+            { show: { system: {} } },
+            { ip: { hotspot: { host: { mac: 'AA:BB:CC:DD:EE:FF', name: 'Test' } } } }
+          ].to_json
+        )
+        .to_return(
+          status: 200,
+          body: [
+            { 'cpuload' => 5 },
+            {}
+          ].to_json
+        )
+
+      result = client.batch([
+        { show: { system: {} } },
+        { ip: { hotspot: { host: { mac: 'AA:BB:CC:DD:EE:FF', name: 'Test' } } } }
+      ])
+
+      expect(result.size).to eq(2)
     end
   end
 

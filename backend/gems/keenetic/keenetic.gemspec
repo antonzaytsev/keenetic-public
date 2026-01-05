@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
 
   spec.require_paths = ['lib']
 
+  spec.add_dependency 'logger', '>= 1.0'
   spec.add_dependency 'typhoeus', '~> 1.4'
 
   spec.metadata['rubygems_mfa_required'] = 'true'

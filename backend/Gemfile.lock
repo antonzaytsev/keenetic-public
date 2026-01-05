@@ -2,6 +2,7 @@ PATH
   remote: gems/keenetic
   specs:
     keenetic (0.1.0)
+      logger (>= 1.0)
       typhoeus (~> 1.4)
 
 GEM
