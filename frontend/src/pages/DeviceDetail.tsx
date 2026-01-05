@@ -75,15 +75,20 @@ export function DeviceDetail() {
   }, [device?.name]);
 
   // Get policy for this device
-  const getDevicePolicy = () => {
-    if (!mac || !policiesData) return null;
-    const policyId = policiesData.device_assignments[mac];
-    if (!policyId) return null;
-    const policy = policiesData.policies.find(p => p.id === policyId);
-    return policy || { id: policyId, name: policyId };
-  };
+  const getDevicePolicyId = useCallback(() => {
+    if (!mac || !policiesData) return '';
+    return policiesData.device_assignments[mac] || '';
+  }, [mac, policiesData]);
 
-  const policy = getDevicePolicy();
+  const currentPolicyId = getDevicePolicyId();
+  const currentPolicy = policiesData?.policies.find(p => p.id === currentPolicyId);
+
+  const handlePolicyChange = useCallback(async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (!mac) return;
+    const newPolicyId = e.target.value;
+    await updateDevice.mutateAsync({ mac, policy: newPolicyId });
+    refetch();
+  }, [mac, updateDevice, refetch]);
 
   const getInterfaceDisplay = () => {
     if (!device?.interface) return '-';
@@ -138,8 +143,8 @@ export function DeviceDetail() {
         {device.registered && (
           <Badge variant="info" size="sm">Registered</Badge>
         )}
-        {policy && (
-          <Badge variant="warning" size="sm">Policy: {policy.name}</Badge>
+        {currentPolicy && (
+          <Badge variant="warning" size="sm">Policy: {currentPolicy.name}</Badge>
         )}
       </div>
 
@@ -181,11 +186,22 @@ export function DeviceDetail() {
           <div className="info-list">
             <InfoRow label="Access" value={device.access || 'Default'} />
             <InfoRow label="Schedule" value={device.schedule || 'None'} />
-            <InfoRow 
-              label="Policy" 
-              value={policy ? policy.name : 'Default'} 
-              highlight={!!policy}
-            />
+            <div className="info-row">
+              <span className="info-row__label">Policy</span>
+              <select
+                className="info-row__select"
+                value={currentPolicyId}
+                onChange={handlePolicyChange}
+                disabled={updateDevice.isPending}
+              >
+                <option value="">Default</option>
+                {policiesData?.policies.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </Card>
 

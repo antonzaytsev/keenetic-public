@@ -120,6 +120,45 @@
   box-shadow: 0 0 0 1px var(--accent-primary);
 }
 
+/* Select dropdown */
+.info-row__select {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--accent-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 0.375rem 0.75rem;
+  padding-right: 2rem;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b949e' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  transition: all 0.15s ease;
+}
+
+.info-row__select:hover {
+  border-color: var(--border-hover);
+}
+
+.info-row__select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.info-row__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.info-row__select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
 /* Traffic statistics */
 .traffic-stats {
   display: flex;

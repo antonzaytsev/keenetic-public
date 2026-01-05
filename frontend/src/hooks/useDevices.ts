@@ -21,7 +21,7 @@ export function useUpdateDevice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ mac, ...data }: { mac: string; name?: string; access?: string }) =>
+    mutationFn: ({ mac, ...data }: { mac: string; name?: string; access?: string; policy?: string }) =>
       api.patch(`/devices/${encodeURIComponent(mac)}`, data),
     onMutate: async ({ mac, name }) => {
       // Cancel outgoing refetches
@@ -51,6 +51,7 @@ export function useUpdateDevice() {
     onSettled: () => {
       // Refetch after mutation
       queryClient.invalidateQueries({ queryKey: ['devices'] });
+      queryClient.invalidateQueries({ queryKey: ['policies'] });
     },
   });
 }

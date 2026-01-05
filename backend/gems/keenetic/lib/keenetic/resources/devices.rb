@@ -119,6 +119,7 @@ module Keenetic
       # @param name [String] New device name (optional)
       # @param access [String] Access policy: "permit" or "deny" (optional)
       # @param schedule [String] Schedule name for access control (optional)
+      # @param policy [String, nil] Routing policy ID (e.g., "Policy0") or nil/empty to remove (optional)
       # @return [Array<Hash>] API response array, or {} if no attributes provided
       #
       # @example Update device name
@@ -128,6 +129,14 @@ module Keenetic
       # @example Update access policy
       #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", access: "permit")
       #   # Sends: [{"ip":{"hotspot":{"host":{"mac":"aa:bb:cc:dd:ee:ff","permit":true}}}}]
+      #
+      # @example Assign routing policy (VPN)
+      #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", policy: "Policy0")
+      #   # Sends: [{"ip":{"hotspot":{"host":{"mac":"aa:bb:cc:dd:ee:ff","policy":"Policy0"}}}}]
+      #
+      # @example Remove routing policy (use default)
+      #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", policy: "")
+      #   # Sends: [{"ip":{"hotspot":{"host":{"mac":"aa:bb:cc:dd:ee:ff","policy":{"no":true}}}}}]
       #
       # @example Update multiple properties (batched in single request)
       #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", name: "TV", access: "permit")
@@ -149,6 +158,18 @@ module Keenetic
           hotspot_params['deny'] = true if attributes[:access] == 'deny'
           hotspot_params['schedule'] = attributes[:schedule] if attributes.key?(:schedule)
           commands << { 'ip' => { 'hotspot' => { 'host' => hotspot_params } } }
+        end
+
+        # Routing policy (VPN policy) is set via 'ip.hotspot.host.policy'
+        if attributes.key?(:policy)
+          policy_value = attributes[:policy]
+          if policy_value.nil? || policy_value.to_s.strip.empty?
+            # Remove policy assignment (use default routing)
+            commands << { 'ip' => { 'hotspot' => { 'host' => { 'mac' => normalized_mac, 'policy' => { 'no' => true } } } } }
+          else
+            # Assign specific policy
+            commands << { 'ip' => { 'hotspot' => { 'host' => { 'mac' => normalized_mac, 'policy' => policy_value } } } }
+          end
         end
 
         return {} if commands.empty?
