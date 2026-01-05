@@ -90,6 +90,16 @@
   color: var(--text-secondary);
 }
 
+/* Device policy */
+.device-policy {
+  font-size: 0.8125rem;
+}
+
+.device-policy--default {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

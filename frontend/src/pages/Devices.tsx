@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Header } from '../components/layout';
-import { Card, Table, StatusBadge, Input, Toggle, type Column } from '../components/ui';
-import { useDevices, useUpdateDevice } from '../hooks';
+import { Card, Table, StatusBadge, Badge, Input, Toggle, type Column } from '../components/ui';
+import { useDevices, useUpdateDevice, usePolicies } from '../hooks';
 import type { Device } from '../api';
 import './Devices.css';
 
@@ -19,9 +19,26 @@ function formatBytes(bytes: number | null): string {
 
 export function Devices() {
   const { data, isLoading, error } = useDevices();
+  const { data: policiesData } = usePolicies();
   const updateDevice = useUpdateDevice();
   
   const [filter, setFilter] = useState('');
+
+  // Create a map of policy ID to policy info for quick lookup
+  const policyMap = useMemo(() => {
+    const map = new Map<string, { id: string; name: string }>();
+    policiesData?.policies.forEach((policy) => {
+      map.set(policy.id, { id: policy.id, name: policy.name });
+    });
+    return map;
+  }, [policiesData?.policies]);
+
+  // Get policy for a device by MAC address
+  const getDevicePolicy = useCallback((mac: string) => {
+    const policyId = policiesData?.device_assignments[mac];
+    if (!policyId) return null;
+    return policyMap.get(policyId) || { id: policyId, name: policyId };
+  }, [policiesData?.device_assignments, policyMap]);
   const [showOnlyActive, setShowOnlyActive] = useState(false);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -130,6 +147,21 @@ export function Devices() {
         if (!iface) return '-';
         if (typeof iface === 'string') return iface;
         return iface.name || iface.id || '-';
+      },
+    },
+    {
+      key: 'policy',
+      header: 'Policy',
+      render: (device) => {
+        const policy = getDevicePolicy(device.mac);
+        if (!policy) {
+          return <span className="device-policy device-policy--default">Default</span>;
+        }
+        return (
+          <Badge variant="info" size="sm">
+            {policy.name}
+          </Badge>
+        );
       },
     },
     {
