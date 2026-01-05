@@ -65,6 +65,81 @@ module Keenetic
         }
       end
 
+      # Configure WAN connection settings.
+      #
+      # == Keenetic API Request
+      #   POST /rci/ (batch format)
+      #   Body: [{"interface": {"<wan_id>": {<config>}}}]
+      #
+      # == Configuration Types
+      #
+      # === PPPoE Connection
+      #   configure('ISP', pppoe: { service: 'ISP', username: 'user', password: 'pass' })
+      #
+      # === Static IP Connection
+      #   configure('ISP', address: '203.0.113.50', mask: '255.255.255.0', gateway: '203.0.113.1')
+      #
+      # === DHCP (IPoE) Connection
+      #   configure('ISP', dhcp: true)
+      #
+      # @param interface_id [String] WAN interface ID (e.g., "ISP", "GigabitEthernet0")
+      # @param options [Hash] Configuration options
+      # @option options [Hash] :pppoe PPPoE settings { service:, username:, password: }
+      # @option options [String] :address Static IP address
+      # @option options [String] :mask Network mask
+      # @option options [String] :gateway Gateway address
+      # @option options [Boolean] :dhcp Enable DHCP
+      # @option options [Boolean] :up Enable (true) or disable (false) the interface
+      # @return [Array<Hash>] API response
+      #
+      # @example Configure PPPoE
+      #   client.internet.configure('ISP',
+      #     pppoe: { service: 'MyISP', username: 'user@isp.com', password: 'secret' },
+      #     up: true
+      #   )
+      #   # Sends: [{"interface":{"ISP":{"pppoe":{"service":"MyISP",...},"up":true}}}]
+      #
+      # @example Configure Static IP
+      #   client.internet.configure('ISP',
+      #     address: '203.0.113.50',
+      #     mask: '255.255.255.0',
+      #     gateway: '203.0.113.1'
+      #   )
+      #
+      # @example Configure DHCP
+      #   client.internet.configure('ISP', dhcp: true, up: true)
+      #   # Sends: [{"interface":{"ISP":{"ip":{"dhcp":true},"up":true}}}]
+      #
+      def configure(interface_id, **options)
+        params = {}
+
+        # Handle PPPoE configuration
+        if options[:pppoe]
+          params['pppoe'] = {
+            'service' => options[:pppoe][:service],
+            'username' => options[:pppoe][:username],
+            'password' => options[:pppoe][:password]
+          }.compact
+        end
+
+        # Handle Static IP configuration
+        params['address'] = options[:address] if options[:address]
+        params['mask'] = options[:mask] if options[:mask]
+        params['gateway'] = options[:gateway] if options[:gateway]
+
+        # Handle DHCP configuration
+        if options[:dhcp]
+          params['ip'] = { 'dhcp' => true }
+        end
+
+        # Handle interface state
+        params['up'] = options[:up] unless options[:up].nil?
+
+        return {} if params.empty?
+
+        client.batch([{ 'interface' => { interface_id => params } }])
+      end
+
       private
 
       def normalize_status(response)

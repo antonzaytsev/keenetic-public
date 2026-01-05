@@ -97,22 +97,115 @@ module Keenetic
         access_points.find { |ap| ap[:id] == id }
       end
 
+      # Configure Wi-Fi access point settings.
+      #
+      # == Keenetic API Request
+      #   POST /rci/ (batch format)
+      #   Body: [{"interface": {"<ap_id>": {<config>}}}]
+      #
+      # == Authentication Types
+      #   - "open": No security
+      #   - "wpa-psk": WPA Personal
+      #   - "wpa2-psk": WPA2 Personal
+      #   - "wpa3-psk": WPA3 Personal
+      #   - "wpa2/wpa3-psk": WPA2/WPA3 mixed mode
+      #
+      # == Encryption Types
+      #   - "aes": AES encryption (recommended)
+      #   - "tkip": TKIP encryption (legacy)
+      #
+      # @param id [String] Access point ID (e.g., "WifiMaster0/AccessPoint0")
+      # @param options [Hash] Configuration options
+      # @option options [String] :ssid Network name
+      # @option options [String] :authentication Security mode
+      # @option options [String] :encryption Encryption type
+      # @option options [String] :key Wi-Fi password
+      # @option options [Integer] :channel Channel number (0 for auto)
+      # @option options [Boolean] :up Enable or disable the access point
+      # @return [Array<Hash>] API response
+      #
+      # @example Configure access point
+      #   client.wifi.configure('WifiMaster0/AccessPoint0',
+      #     ssid: 'MyNetwork',
+      #     authentication: 'wpa2-psk',
+      #     encryption: 'aes',
+      #     key: 'mysecretpassword',
+      #     up: true
+      #   )
+      #   # Sends: [{"interface":{"WifiMaster0/AccessPoint0":{"ssid":"MyNetwork",...}}}]
+      #
+      # @example Change SSID only
+      #   client.wifi.configure('WifiMaster0/AccessPoint0', ssid: 'NewNetworkName')
+      #
+      # @example Set channel
+      #   client.wifi.configure('WifiMaster0', channel: 6)
+      #
+      def configure(id, **options)
+        params = {}
+
+        params['ssid'] = options[:ssid] if options[:ssid]
+        params['authentication'] = options[:authentication] if options[:authentication]
+        params['encryption'] = options[:encryption] if options[:encryption]
+        params['key'] = options[:key] if options[:key]
+        params['channel'] = options[:channel] if options[:channel]
+        params['up'] = options[:up] unless options[:up].nil?
+
+        return {} if params.empty?
+
+        client.batch([{ 'interface' => { id => params } }])
+      end
+
+      # Enable a Wi-Fi access point.
+      #
+      # == Keenetic API Request
+      #   POST /rci/ (batch format)
+      #   Body: [{"interface": {"<ap_id>": {"up": true}}}]
+      #
+      # @param id [String] Access point ID (e.g., "WifiMaster0/AccessPoint0")
+      # @return [Array<Hash>] API response
+      #
+      # @example Enable access point
+      #   client.wifi.enable('WifiMaster0/AccessPoint0')
+      #   # Sends: [{"interface":{"WifiMaster0/AccessPoint0":{"up":true}}}]
+      #
+      def enable(id)
+        client.batch([{ 'interface' => { id => { 'up' => true } } }])
+      end
+
+      # Disable a Wi-Fi access point.
+      #
+      # == Keenetic API Request
+      #   POST /rci/ (batch format)
+      #   Body: [{"interface": {"<ap_id>": {"up": false}}}]
+      #
+      # @param id [String] Access point ID (e.g., "WifiMaster0/AccessPoint0")
+      # @return [Array<Hash>] API response
+      #
+      # @example Disable guest network
+      #   client.wifi.disable('WifiMaster0/AccessPoint1')
+      #   # Sends: [{"interface":{"WifiMaster0/AccessPoint1":{"up":false}}}]
+      #
+      def disable(id)
+        client.batch([{ 'interface' => { id => { 'up' => false } } }])
+      end
+
       private
 
       def extract_wifi_interfaces(response)
         return [] unless response.is_a?(Hash)
 
         response
-          .select { |id, data| wifi_interface?(data) }
+          .select { |id, data| wifi_interface?(id, data) }
           .map { |id, data| normalize_wifi(id, data) }
       end
 
-      def wifi_interface?(data)
+      def wifi_interface?(id, data)
         return false unless data.is_a?(Hash)
         
         data['type'] == 'AccessPoint' || 
-          data['id']&.start_with?('WifiMaster') ||
-          data['id']&.start_with?('AccessPoint')
+          data['type'] == 'WifiMaster' ||
+          id.start_with?('WifiMaster') ||
+          id.start_with?('AccessPoint')
       end
 
       def normalize_wifi(id, data)

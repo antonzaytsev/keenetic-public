@@ -48,15 +48,15 @@ Implementation status according to [KEENETIC_API.md](./KEENETIC_API.md) specific
 
 - [x] Internet Status (`client.internet.status`)
 - [x] WAN Speed Stats (`client.internet.speed`)
-- [ ] Configure WAN Connection
+- [x] Configure WAN Connection (`client.internet.configure`)
 
 ## 7. Wi-Fi
 
 - [x] Wi-Fi Access Points (`client.wifi.access_points`)
 - [x] Wi-Fi Clients (`client.wifi.clients`)
 - [x] Get Access Point by ID (`client.wifi.access_point`)
-- [ ] Configure Wi-Fi
-- [ ] Enable/Disable Wi-Fi
+- [x] Configure Wi-Fi (`client.wifi.configure`)
+- [x] Enable/Disable Wi-Fi (`client.wifi.enable`, `client.wifi.disable`)
 
 ## 8. DHCP
 
