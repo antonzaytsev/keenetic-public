@@ -15,10 +15,9 @@ services:
       - KEENETIC_HOST=${KEENETIC_HOST}
       - KEENETIC_LOGIN=${KEENETIC_LOGIN}
       - KEENETIC_PASSWORD=${KEENETIC_PASSWORD}
-    networks:
-      - keenetic_network
     tty: true
     stdin_open: true
+    restart: unless-stopped
 
   frontend:
     build:
@@ -35,9 +34,4 @@ services:
       - VITE_BACKEND_URL=http://${BACKEND_HOST:-localhost}:${BACKEND_PORT:-4000}
     depends_on:
       - backend
-    networks:
-      - keenetic_network
-
-networks:
-  keenetic_network:
-    driver: bridge
+    restart: unless-stopped
