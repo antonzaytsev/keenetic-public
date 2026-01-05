@@ -1,0 +1,18 @@
+source 'https://rubygems.org'
+
+ruby '~> 4.0'
+
+gem 'rackup'
+gem 'roda'
+gem 'puma'
+gem 'rack-cors'
+gem 'typhoeus'
+gem 'logger'
+
+group :development, :test do
+  gem 'rspec'
+  gem 'webmock'
+  gem 'rack-test'
+  gem 'rerun'
+  gem 'listen'
+end

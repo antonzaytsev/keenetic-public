@@ -1,0 +1,21 @@
+# Environment
+.env
+
+# Dependencies (stored in application folders)
+backend/vendor/
+frontend/node_modules/
+frontend/.pnpm-store/
+
+# Build outputs
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+

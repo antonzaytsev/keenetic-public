@@ -9,14 +9,42 @@ Local network application that interfaces with a Keenetic router to display and 
 ### 1.1 Project Structure Setup
 - [ ] Create main project directory structure
 - [ ] Initialize git repository
+- [ ] Create `.gitignore` (ignore `.env`, `node_modules/`, `vendor/`, build outputs)
 - [ ] Create `docker-compose.yml` with service definitions
 
 ### 1.2 Docker Services Configuration
-- [ ] **backend**: Ruby service (internal port 4000, external configurable via `BACKEND_EXTERNAL_PORT`)
-- [ ] **frontend**: React development server (internal port 3000, external configurable via `FRONTEND_EXTERNAL_PORT`)
+- [ ] **backend**: Ruby service (Puma, binds to `0.0.0.0`, port via `BACKEND_PORT`, default 4000)
+- [ ] **frontend**: React development server (Vite, binds to `0.0.0.0`, port via `FRONTEND_PORT`, default 3000)
 - [ ] Define volumes for code hot-reloading
 - [ ] Set up internal network for service communication
-- [ ] Configure port mapping using environment variables with defaults
+- [ ] Port mapping: internal and external ports match, controlled by env variables
+- [ ] Vite proxy uses Docker service name (`backend`) for inter-container communication
+- [ ] `BACKEND_HOST` used by frontend for browser requests (default: `localhost`)
+
+**Docker Philosophy:**
+- Minimal Dockerfiles - only base image and workdir, no CMD/EXPOSE/dependency installation
+- Base images: `ruby:4.0-slim`, `node:25-slim`
+- Commands and ports defined in `docker-compose.yml` (single source of truth)
+- Dependencies stored in application folders (gitignored):
+  - Backend: `vendor/bundle` (via `BUNDLE_PATH` env var)
+  - Frontend: `node_modules`, `.pnpm-store`
+- Manual dependency installation via `docker compose run` commands:
+  ```bash
+  docker compose run --rm backend bundle install
+  docker compose run --rm frontend pnpm install
+  ```
+
+**Ruby 4.0 Notes:**
+- `logger` gem must be explicitly added (removed from stdlib)
+
+**Hot Reload:**
+- Backend: `rerun` gem watches file changes and restarts Rackup server
+- Frontend: Vite's built-in HMR (Hot Module Replacement)
+
+**pnpm Configuration (for Docker compatibility):**
+- `node-linker=hoisted` - flat node_modules structure (npm-style)
+- `package-import-method=copy` - copy files instead of symlinks
+- `symlink=false` - disable symlinks to avoid issues with bind mounts
 
 ---
 
@@ -27,6 +55,8 @@ Local network application that interfaces with a Keenetic router to display and 
 - [ ] Set up Bundler with `Gemfile`
 - [ ] Configure environment variables handling
 - [ ] Set up JSON serialization
+- [ ] Configure CORS middleware (`rack-cors`)
+- [ ] Add error handling with meaningful JSON responses (500, 404)
 
 ### 2.2 Keenetic Communication Library
 
@@ -37,7 +67,7 @@ Local network application that interfaces with a Keenetic router to display and 
 - [ ] Use `Keenetic` as top-level namespace
 - [ ] Self-contained configuration (no app dependencies)
 - [ ] Own version constant (`Keenetic::VERSION`)
-- [ ] Minimal external dependencies (only HTTP client + digest libs)
+- [ ] Minimal external dependencies (Typhoeus for HTTP, digest libs)
 - [ ] No Rails/Roda/framework-specific code
 - [ ] Configuration via block: `Keenetic.configure { |c| c.host = '...' }`
 - [ ] Thread-safe client instances
@@ -297,15 +327,17 @@ KEENETIC_LOGIN=admin
 KEENETIC_PASSWORD=your_password
 
 # Backend
-BACKEND_PORT=4000                    # Internal port (inside container)
-BACKEND_EXTERNAL_PORT=4000           # External port (host machine)
 RACK_ENV=development
+BACKEND_HOST=localhost
+BACKEND_PORT=4000
 
 # Frontend
-FRONTEND_PORT=3000                   # Internal port (inside container)
-FRONTEND_EXTERNAL_PORT=3000          # External port (host machine)
-VITE_API_URL=http://localhost:4000   # Should match BACKEND_EXTERNAL_PORT
+FRONTEND_PORT=3000
 ```
 
-**Note:** When changing external ports, update `VITE_API_URL` to match `BACKEND_EXTERNAL_PORT`.
+**Notes:**
+- Services always bind to `0.0.0.0` inside containers (configured in Puma/Vite)
+- `BACKEND_HOST` is for browser requests from frontend (default: `localhost`)
+- `VITE_API_URL` uses Docker service name (`backend`) for proxy (inter-container)
+- `VITE_BACKEND_URL` uses `BACKEND_HOST` for direct browser requests
 

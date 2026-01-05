@@ -18,6 +18,9 @@ Local network web application for monitoring and managing Keenetic routers.
 
 ```bash
 cp .env.example .env
+docker compose build
+docker compose run --rm backend bundle install
+docker compose run --rm frontend pnpm install
 docker compose up
 ```
 

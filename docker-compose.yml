@@ -1,0 +1,43 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: bundle exec rerun --background -- puma -C config/puma.rb config.ru
+    ports:
+      - "${BACKEND_PORT:-4000}:${BACKEND_PORT:-4000}"
+    volumes:
+      - ./backend:/app
+    environment:
+      - RACK_ENV=${RACK_ENV:-development}
+      - BUNDLE_PATH=/app/vendor/bundle
+      - BACKEND_PORT=${BACKEND_PORT:-4000}
+      - KEENETIC_HOST=${KEENETIC_HOST}
+      - KEENETIC_LOGIN=${KEENETIC_LOGIN}
+      - KEENETIC_PASSWORD=${KEENETIC_PASSWORD}
+    networks:
+      - keenetic_network
+    tty: true
+    stdin_open: true
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: pnpm dev --host 0.0.0.0 --port ${FRONTEND_PORT:-3000}
+    ports:
+      - "${FRONTEND_PORT:-3000}:${FRONTEND_PORT:-3000}"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - FRONTEND_PORT=${FRONTEND_PORT:-3000}
+      - VITE_API_URL=http://backend:${BACKEND_PORT:-4000}
+      - VITE_BACKEND_URL=http://${BACKEND_HOST:-localhost}:${BACKEND_PORT:-4000}
+    depends_on:
+      - backend
+    networks:
+      - keenetic_network
+
+networks:
+  keenetic_network:
+    driver: bridge
