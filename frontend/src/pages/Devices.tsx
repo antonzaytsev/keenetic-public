@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card, Table, StatusBadge, Badge, Input, Toggle, type Column } from '../components/ui';
-import { useDevices, useUpdateDevice, usePolicies } from '../hooks';
+import { useDevices, usePolicies } from '../hooks';
 import type { Device } from '../api';
 import './Devices.css';
 
@@ -18,11 +19,12 @@ function formatBytes(bytes: number | null): string {
 }
 
 export function Devices() {
+  const navigate = useNavigate();
   const { data, isLoading, error } = useDevices();
   const { data: policiesData } = usePolicies();
-  const updateDevice = useUpdateDevice();
   
   const [filter, setFilter] = useState('');
+  const [showOnlyActive, setShowOnlyActive] = useState(false);
 
   // Create a map of policy ID to policy info for quick lookup
   const policyMap = useMemo(() => {
@@ -39,9 +41,6 @@ export function Devices() {
     if (!policyId) return null;
     return policyMap.get(policyId) || { id: policyId, name: policyId };
   }, [policiesData?.device_assignments, policyMap]);
-  const [showOnlyActive, setShowOnlyActive] = useState(false);
-  const [editingDevice, setEditingDevice] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
 
   const filteredDevices = (data?.devices.filter((device) => {
     if (showOnlyActive && !device.active) return false;
@@ -63,24 +62,6 @@ export function Devices() {
     return nameA.localeCompare(nameB);
   });
 
-  const startEditing = useCallback((device: Device) => {
-    setEditingDevice(device.mac);
-    setEditName(device.name || device.hostname || '');
-  }, []);
-
-  const saveEdit = useCallback(async () => {
-    if (!editingDevice) return;
-    
-    await updateDevice.mutateAsync({ mac: editingDevice, name: editName });
-    setEditingDevice(null);
-    setEditName('');
-  }, [editingDevice, editName, updateDevice]);
-
-  const cancelEdit = useCallback(() => {
-    setEditingDevice(null);
-    setEditName('');
-  }, []);
-
   const columns: Column<Device>[] = [
     {
       key: 'status',
@@ -91,39 +72,11 @@ export function Devices() {
     {
       key: 'name',
       header: 'Name',
-      render: (device) => {
-        if (editingDevice === device.mac) {
-          return (
-            <div className="device-name-edit">
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveEdit();
-                  if (e.key === 'Escape') cancelEdit();
-                }}
-                autoFocus
-              />
-              <div className="device-name-edit__actions">
-                <button className="btn btn--sm btn--primary" onClick={saveEdit}>
-                  Save
-                </button>
-                <button className="btn btn--sm btn--ghost" onClick={cancelEdit}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          );
-        }
-        return (
-          <div className="device-name" onClick={() => startEditing(device)}>
-            <span className="device-name__value">
-              {device.name || device.hostname || 'Unknown'}
-            </span>
-            <span className="device-name__edit-icon">✎</span>
-          </div>
-        );
-      },
+      render: (device) => (
+        <span className="device-name__value">
+          {device.name || device.hostname || 'Unknown'}
+        </span>
+      ),
     },
     {
       key: 'ip',
@@ -213,6 +166,7 @@ export function Devices() {
             keyExtractor={(device) => device.mac}
             loading={isLoading}
             emptyMessage="No devices match your filters"
+            onRowClick={(device) => navigate(`/devices/${encodeURIComponent(device.mac)}`)}
           />
         )}
       </Card>
