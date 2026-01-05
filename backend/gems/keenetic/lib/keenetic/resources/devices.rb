@@ -41,38 +41,21 @@ module Keenetic
     #   - first-seen/last-seen: Timestamps
     #
     class Devices < Base
-      # Fetch all registered devices (hosts).
+      # Fetch all registered devices (hosts) with static IP info.
       #
       # == Keenetic API Request
-      #   GET /rci/show/ip/hotspot
+      #   GET /rci/show/ip/hotspot/host
       #
-      # == Response Structure from API
-      #   {
-      #     "host": [
-      #       {
-      #         "mac": "AA:BB:CC:DD:EE:FF",
-      #         "name": "My Phone",
-      #         "hostname": "iphone",
-      #         "ip": "192.168.1.100",
-      #         "interface": "Bridge0",
-      #         "via": "WifiMaster0/AccessPoint0",
-      #         "active": true,
-      #         "registered": true,
-      #         "access": "permit",
-      #         "rxbytes": 1073741824,
-      #         "txbytes": 536870912,
-      #         "uptime": 3600
-      #       }
-      #     ]
-      #   }
+      # Static IP info is included in the device data as dhcp.static: true
+      # When static is true, the device's ip field is the reserved static IP.
       #
-      # @return [Array<Hash>] List of normalized device hashes
+      # @return [Array<Hash>] List of normalized device hashes with static_ip info
       # @example
       #   devices = client.devices.all
-      #   # => [{ mac: "AA:BB:CC:DD:EE:FF", name: "My Phone", active: true, ... }]
+      #   # => [{ mac: "AA:BB:CC:DD:EE:FF", name: "My Phone", active: true, static_ip: "192.168.1.100", ... }]
       #
       def all
-        response = get('/rci/show/ip/hotspot')
+        response = get('/rci/show/ip/hotspot/host')
         normalize_devices(response)
       end
 
@@ -81,11 +64,11 @@ module Keenetic
       # Uses #all internally and filters by MAC (case-insensitive comparison).
       #
       # @param mac [String] Device MAC address (case-insensitive)
-      # @return [Hash] Device data
+      # @return [Hash] Device data with static_ip info
       # @raise [NotFoundError] if device not found
       # @example
       #   device = client.devices.find(mac: 'AA:BB:CC:DD:EE:FF')
-      #   # => { mac: "AA:BB:CC:DD:EE:FF", name: "My Phone", ... }
+      #   # => { mac: "AA:BB:CC:DD:EE:FF", name: "My Phone", static_ip: "192.168.1.100", ... }
       #
       def find(mac:)
         devices = all
@@ -120,6 +103,7 @@ module Keenetic
       # @param access [String] Access policy: "permit" or "deny" (optional)
       # @param schedule [String] Schedule name for access control (optional)
       # @param policy [String, nil] Routing policy ID (e.g., "Policy0") or nil/empty to remove (optional)
+      # @param static_ip [String, nil] Static IP address to reserve, or nil/empty to remove (optional)
       # @return [Array<Hash>] API response array, or {} if no attributes provided
       #
       # @example Update device name
@@ -137,6 +121,14 @@ module Keenetic
       # @example Remove routing policy (use default)
       #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", policy: "")
       #   # Sends: [{"ip":{"hotspot":{"host":{"mac":"aa:bb:cc:dd:ee:ff","policy":{"no":true}}}}}]
+      #
+      # @example Set static IP reservation
+      #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", static_ip: "192.168.1.100")
+      #   # Sends: [{"ip":{"dhcp":{"host":{"mac":"aa:bb:cc:dd:ee:ff","ip":"192.168.1.100"}}}}]
+      #
+      # @example Remove static IP reservation
+      #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", static_ip: "")
+      #   # Sends: [{"ip":{"dhcp":{"host":{"mac":"aa:bb:cc:dd:ee:ff","no":true}}}}]
       #
       # @example Update multiple properties (batched in single request)
       #   client.devices.update(mac: "AA:BB:CC:DD:EE:FF", name: "TV", access: "permit")
@@ -169,6 +161,18 @@ module Keenetic
           else
             # Assign specific policy
             commands << { 'ip' => { 'hotspot' => { 'host' => { 'mac' => normalized_mac, 'policy' => policy_value } } } }
+          end
+        end
+
+        # Static IP reservation is set via 'ip.dhcp.host' RCI command
+        if attributes.key?(:static_ip)
+          static_ip_value = attributes[:static_ip]
+          if static_ip_value.nil? || static_ip_value.to_s.strip.empty?
+            # Remove static IP reservation
+            commands << { 'ip' => { 'dhcp' => { 'host' => { 'mac' => normalized_mac, 'no' => true } } } }
+          else
+            # Set static IP reservation
+            commands << { 'ip' => { 'dhcp' => { 'host' => { 'mac' => normalized_mac, 'ip' => static_ip_value } } } }
           end
         end
 
@@ -211,20 +215,28 @@ module Keenetic
       private
 
       def normalize_devices(response)
-        return [] unless response.is_a?(Hash) && response['host']
-
-        hosts = response['host']
+        # Response from /rci/show/ip/hotspot/host is an array directly
+        hosts = response.is_a?(Array) ? response : (response['host'] || [response])
         hosts = [hosts] unless hosts.is_a?(Array)
 
-        hosts.map { |host| normalize_device(host) }
+        hosts.map { |host| normalize_device(host) }.compact
       end
 
       def normalize_device(host)
+        return nil unless host.is_a?(Hash)
+        
+        mac = host['mac']
+        # Static IP is indicated by dhcp.static: true, and the IP is in the ip field
+        dhcp_info = host['dhcp']
+        is_static = dhcp_info.is_a?(Hash) && dhcp_info['static'] == true
+        static_ip = is_static ? host['ip'] : nil
+
         {
-          mac: host['mac'],
+          mac: mac,
           name: host['name'] || host['hostname'],
           hostname: host['hostname'],
           ip: host['ip'],
+          static_ip: static_ip,
           interface: host['interface'],
           via: host['via'],
           active: host['active'] == true || host['active'] == 'true',

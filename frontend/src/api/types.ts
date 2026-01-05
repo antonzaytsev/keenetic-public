@@ -10,6 +10,7 @@ export interface Device {
   name: string | null;
   hostname: string | null;
   ip: string | null;
+  static_ip: string | null;
   interface: string | DeviceInterface | null;
   via: string | null;
   active: boolean;

@@ -90,6 +90,36 @@ export function DeviceDetail() {
     refetch();
   }, [mac, updateDevice, refetch]);
 
+  const handleStaticIpEdit = useCallback(async (e: React.FocusEvent<HTMLSpanElement> | React.KeyboardEvent<HTMLSpanElement>) => {
+    if ('key' in e && e.key !== 'Enter') return;
+    if ('key' in e) e.preventDefault();
+    
+    const newStaticIp = (e.target as HTMLSpanElement).textContent?.trim() || '';
+    const currentStaticIp = device?.static_ip || '';
+    
+    // Validate IP format if not empty
+    if (newStaticIp && !/^(\d{1,3}\.){3}\d{1,3}$/.test(newStaticIp)) {
+      (e.target as HTMLSpanElement).textContent = currentStaticIp || '-';
+      return;
+    }
+    
+    if (newStaticIp !== currentStaticIp && mac) {
+      await updateDevice.mutateAsync({ mac, static_ip: newStaticIp });
+      refetch();
+    }
+  }, [device?.static_ip, mac, updateDevice, refetch]);
+
+  const handleStaticIpKeyDown = useCallback((e: React.KeyboardEvent<HTMLSpanElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      (e.target as HTMLSpanElement).blur();
+    }
+    if (e.key === 'Escape') {
+      (e.target as HTMLSpanElement).textContent = device?.static_ip || '-';
+      (e.target as HTMLSpanElement).blur();
+    }
+  }, [device?.static_ip]);
+
   const getInterfaceDisplay = () => {
     if (!device?.interface) return '-';
     if (typeof device.interface === 'string') return device.interface;
@@ -143,6 +173,9 @@ export function DeviceDetail() {
         {device.registered && (
           <Badge variant="info" size="sm">Registered</Badge>
         )}
+        {device.static_ip && (
+          <Badge variant="success" size="sm">Static IP</Badge>
+        )}
         {currentPolicy && (
           <Badge variant="warning" size="sm">Policy: {currentPolicy.name}</Badge>
         )}
@@ -153,17 +186,29 @@ export function DeviceDetail() {
         <Card title="Network Information" className="detail-card">
           <div className="info-list">
             <InfoRow label="IP Address" value={device.ip} mono />
+            <div className="info-row">
+              <span className="info-row__label">Static IP</span>
+              <span
+                className="info-row__value info-row__value--mono info-row__value--editable"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={handleStaticIpEdit}
+                onKeyDown={handleStaticIpKeyDown}
+                spellCheck={false}
+              >
+                {device.static_ip || '-'}
+              </span>
+            </div>
             <InfoRow label="MAC Address" value={device.mac} mono />
             <InfoRow label="Interface" value={getInterfaceDisplay()} />
             <InfoRow label="Via" value={device.via} mono />
-            <InfoRow label="Link" value={device.link} />
           </div>
         </Card>
 
         {/* Identity */}
         <Card title="Identity" className="detail-card">
           <div className="info-list">
-            <div className="info-row info-row--editable">
+            <div className="info-row">
               <span className="info-row__label">Name</span>
               <span
                 className="info-row__value info-row__value--highlight info-row__value--editable"

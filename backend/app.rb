@@ -85,14 +85,14 @@ class App < Roda
           # PATCH /api/devices/:mac - update device
           r.patch do
             params = r.params
-            allowed_keys = %w[name access schedule policy]
+            allowed_keys = %w[name access schedule policy static_ip]
             updates = params.select { |k, _| allowed_keys.include?(k) }
             
             if updates.empty?
               response.status = 400
               next { 
                 error: 'Bad Request', 
-                message: 'No valid update parameters provided. Allowed: name, access, schedule, policy',
+                message: 'No valid update parameters provided. Allowed: name, access, schedule, policy, static_ip',
                 timestamp: Time.now.iso8601
               }
             end
