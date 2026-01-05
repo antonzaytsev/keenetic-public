@@ -29,6 +29,10 @@
   margin-bottom: 1rem;
 }
 
+.card--padding-none .card__header {
+  padding: 1.25rem 1.25rem 0;
+}
+
 .card__title {
   font-family: var(--font-display);
   font-size: 0.75rem;

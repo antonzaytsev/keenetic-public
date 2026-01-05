@@ -118,7 +118,12 @@ export function Devices() {
     {
       key: 'interface',
       header: 'Interface',
-      render: (device) => device.interface || '-',
+      render: (device) => {
+        const iface = device.interface;
+        if (!iface) return '-';
+        if (typeof iface === 'string') return iface;
+        return iface.name || iface.id || '-';
+      },
     },
     {
       key: 'traffic',

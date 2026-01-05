@@ -1,10 +1,16 @@
 // Device types
+export interface DeviceInterface {
+  id?: string;
+  name?: string;
+  description?: string;
+}
+
 export interface Device {
   mac: string;
   name: string | null;
   hostname: string | null;
   ip: string | null;
-  interface: string | null;
+  interface: string | DeviceInterface | null;
   via: string | null;
   active: boolean;
   registered: boolean;
