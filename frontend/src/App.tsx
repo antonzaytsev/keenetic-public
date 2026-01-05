@@ -1,34 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Layout } from './components/layout';
+import { Dashboard, Devices, System } from './pages';
 
 function App() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['health'],
-    queryFn: async () => {
-      const res = await fetch('/api/health')
-      return res.json()
-    },
-  })
-
   return (
-    <div className="app">
-      <header className="header">
-        <h1>Keenetic Dashboard</h1>
-      </header>
-      <main className="main">
-        <div className="card">
-          <h2>API Status</h2>
-          {isLoading && <p className="status-loading">Connecting...</p>}
-          {error && <p className="status-error">Connection failed</p>}
-          {data && (
-            <p className="status-ok">
-              Connected • {data.timestamp}
-            </p>
-          )}
-        </div>
-      </main>
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/devices" element={<Devices />} />
+          <Route path="/system" element={<System />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
-
+export default App;

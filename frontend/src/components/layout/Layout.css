@@ -1,0 +1,37 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.layout__main {
+  flex: 1;
+  margin-left: 220px;
+  background: var(--bg-main);
+  min-height: 100vh;
+}
+
+.layout__content {
+  padding: 2rem 2.5rem;
+  max-width: 1400px;
+}
+
+/* Background pattern */
+.layout__main::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 100% 0%, rgba(88, 166, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(63, 185, 80, 0.02) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.layout__content {
+  position: relative;
+  z-index: 1;
+}
+

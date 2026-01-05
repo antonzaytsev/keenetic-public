@@ -1,0 +1,170 @@
+.system-page {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* System grid */
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Info card */
+.info-card,
+.firmware-card,
+.resource-card {
+  min-height: 240px;
+}
+
+.info-loading,
+.info-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  color: var(--text-muted);
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row__label {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.info-row__value {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: right;
+}
+
+.info-row__value--highlight {
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+}
+
+/* Resource bars */
+.resource-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.resource-uptime {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+}
+
+.resource-uptime__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.resource-uptime__value {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+/* Interfaces card */
+.interfaces-card {
+  overflow: hidden;
+}
+
+/* Interface name */
+.interface-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.interface-name__id {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.interface-name__desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Interface traffic */
+.interface-traffic {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+.interface-traffic__rx {
+  color: var(--accent-success);
+}
+
+.interface-traffic__tx {
+  color: var(--accent-primary);
+}
+
+/* Mono text */
+.mono-text {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.mono-text--muted {
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .system-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .resource-card {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .system-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .resource-card {
+    grid-column: span 1;
+  }
+}
+

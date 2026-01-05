@@ -1,0 +1,158 @@
+.devices-page {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Filters */
+.devices-filters {
+  margin-bottom: 1rem;
+}
+
+.devices-filters__row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.devices-filters__search {
+  width: 300px;
+}
+
+/* Table card */
+.devices-table-card {
+  overflow: hidden;
+}
+
+/* Device name */
+.device-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.device-name:hover .device-name__edit-icon {
+  opacity: 1;
+}
+
+.device-name__value {
+  font-weight: 500;
+}
+
+.device-name__edit-icon {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Device name edit */
+.device-name-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.device-name-edit__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Traffic display */
+.device-traffic {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+  font-size: 0.8125rem;
+}
+
+.device-traffic__down {
+  color: var(--accent-success);
+}
+
+.device-traffic__up {
+  color: var(--accent-primary);
+}
+
+/* Mono text */
+.mono-text {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.mono-text--muted {
+  color: var(--text-secondary);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn--sm {
+  padding: 0.375rem 0.75rem;
+}
+
+.btn--primary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn--primary:hover {
+  background: #4a9aee;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn--ghost:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Error state */
+.devices-error {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--accent-danger);
+}
+
+.devices-error p {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.devices-error span {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .devices-filters__row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .devices-filters__search {
+    width: 100%;
+  }
+}
+

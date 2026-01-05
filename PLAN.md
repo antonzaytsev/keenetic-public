@@ -4,22 +4,22 @@ Local network application that interfaces with a Keenetic router to display and 
 
 ---
 
-## Phase 1: Project Foundation
+## Phase 1: Project Foundation ✅
 
 ### 1.1 Project Structure Setup
-- [ ] Create main project directory structure
-- [ ] Initialize git repository
-- [ ] Create `.gitignore` (ignore `.env`, `node_modules/`, `vendor/`, build outputs)
-- [ ] Create `docker-compose.yml` with service definitions
+- [x] Create main project directory structure
+- [x] Initialize git repository
+- [x] Create `.gitignore` (ignore `.env`, `node_modules/`, `vendor/`, build outputs)
+- [x] Create `docker-compose.yml` with service definitions
 
 ### 1.2 Docker Services Configuration
-- [ ] **backend**: Ruby service (Puma, binds to `0.0.0.0`, port via `BACKEND_PORT`, default 4000)
-- [ ] **frontend**: React development server (Vite, binds to `0.0.0.0`, port via `FRONTEND_PORT`, default 3000)
-- [ ] Define volumes for code hot-reloading
-- [ ] Set up internal network for service communication
-- [ ] Port mapping: internal and external ports match, controlled by env variables
-- [ ] Vite proxy uses Docker service name (`backend`) for inter-container communication
-- [ ] `BACKEND_HOST` used by frontend for browser requests (default: `localhost`)
+- [x] **backend**: Ruby service (Puma, binds to `0.0.0.0`, port via `BACKEND_PORT`, default 4000)
+- [x] **frontend**: React development server (Vite, binds to `0.0.0.0`, port via `FRONTEND_PORT`, default 3000)
+- [x] Define volumes for code hot-reloading
+- [x] Set up internal network for service communication
+- [x] Port mapping: internal and external ports match, controlled by env variables
+- [x] Vite proxy uses Docker service name (`backend`) for inter-container communication
+- [x] `BACKEND_HOST` used by frontend for browser requests (default: `localhost`)
 
 **Docker Philosophy:**
 - Minimal Dockerfiles - only base image and workdir, no CMD/EXPOSE/dependency installation
@@ -48,15 +48,15 @@ Local network application that interfaces with a Keenetic router to display and 
 
 ---
 
-## Phase 2: Backend Ruby Service
+## Phase 2: Backend Ruby Service ✅
 
 ### 2.1 Ruby Application Bootstrap
-- [ ] Create Roda-based API application
-- [ ] Set up Bundler with `Gemfile`
-- [ ] Configure environment variables handling
-- [ ] Set up JSON serialization
-- [ ] Configure CORS middleware (`rack-cors`)
-- [ ] Add error handling with meaningful JSON responses (500, 404)
+- [x] Create Roda-based API application
+- [x] Set up Bundler with `Gemfile`
+- [x] Configure environment variables handling
+- [x] Set up JSON serialization
+- [x] Configure CORS middleware (`rack-cors`)
+- [x] Add error handling with meaningful JSON responses (500, 404)
 
 ### 2.2 Keenetic Communication Library
 
@@ -64,13 +64,13 @@ Local network application that interfaces with a Keenetic router to display and 
 > Design it as a standalone, self-contained package from the start.
 
 **Gem-Ready Architecture Requirements:**
-- [ ] Use `Keenetic` as top-level namespace
-- [ ] Self-contained configuration (no app dependencies)
-- [ ] Own version constant (`Keenetic::VERSION`)
-- [ ] Minimal external dependencies (Typhoeus for HTTP, digest libs)
-- [ ] No Rails/Roda/framework-specific code
-- [ ] Configuration via block: `Keenetic.configure { |c| c.host = '...' }`
-- [ ] Thread-safe client instances
+- [x] Use `Keenetic` as top-level namespace
+- [x] Self-contained configuration (no app dependencies)
+- [x] Own version constant (`Keenetic::VERSION`)
+- [x] Minimal external dependencies (Typhoeus for HTTP, digest libs)
+- [x] No Rails/Roda/framework-specific code
+- [x] Configuration via block: `Keenetic.configure { |c| c.host = '...' }`
+- [x] Thread-safe client instances
 
 **Library File Structure (inside `backend/lib/keenetic/`):**
 ```
@@ -89,18 +89,18 @@ keenetic/
 ```
 
 **Layer 1 - Base Client (`Keenetic::Client`)**
-- [ ] HTTP request handling (GET, POST)
-- [ ] Authentication flow (challenge-response with MD5+SHA256)
-- [ ] Cookie/session management
-- [ ] Connection pooling and timeouts
-- [ ] Error handling and retry logic
-- [ ] Configurable logger (defaults to null logger)
+- [x] HTTP request handling (GET, POST)
+- [x] Authentication flow (challenge-response with MD5+SHA256)
+- [x] Cookie/session management
+- [x] Connection pooling and timeouts
+- [x] Error handling and retry logic
+- [x] Configurable logger (defaults to null logger)
 
 **Layer 2 - API Resources**
-- [ ] `Keenetic::Resources::Devices` - connected clients management
-- [ ] `Keenetic::Resources::System` - router resources (RAM, CPU, storage)
-- [ ] `Keenetic::Resources::Network` - interfaces, ports status
-- [ ] `Keenetic::Resources::WiFi` - wireless networks info
+- [x] `Keenetic::Resources::Devices` - connected clients management
+- [x] `Keenetic::Resources::System` - router resources (RAM, CPU, storage)
+- [x] `Keenetic::Resources::Network` - interfaces, ports status
+- [x] `Keenetic::Resources::WiFi` - wireless networks info
 
 **Public API Design:**
 ```ruby
@@ -121,85 +121,85 @@ client.network.interfaces
 ```
 
 ### 2.3 API Endpoints
-- [ ] `GET /api/devices` - list connected clients
-- [ ] `GET /api/devices/:mac` - single device details
-- [ ] `PATCH /api/devices/:mac` - update device (name, access)
-- [ ] `GET /api/system/resources` - RAM, CPU, storage
-- [ ] `GET /api/system/info` - router model, firmware
-- [ ] `GET /api/network/interfaces` - network interfaces status
+- [x] `GET /api/devices` - list connected clients
+- [x] `GET /api/devices/:mac` - single device details
+- [x] `PATCH /api/devices/:mac` - update device (name, access)
+- [x] `GET /api/system/resources` - RAM, CPU, storage
+- [x] `GET /api/system/info` - router model, firmware
+- [x] `GET /api/network/interfaces` - network interfaces status
 
 ### 2.4 Backend Testing
-- [ ] Set up RSpec
-- [ ] Unit tests for Keenetic library (with stubbed HTTP)
-- [ ] Integration tests for API endpoints
+- [x] Set up RSpec
+- [x] Unit tests for Keenetic library (with stubbed HTTP)
+- [x] Integration tests for API endpoints
 
 ---
 
-## Phase 3: Frontend React Service
+## Phase 3: Frontend React Service ✅
 
 ### 3.1 React Application Bootstrap
-- [ ] Create React app with Vite
-- [ ] Set up TypeScript
-- [ ] Configure API proxy to backend
-- [ ] Install dependencies (axios/fetch, routing)
+- [x] Create React app with Vite
+- [x] Set up TypeScript
+- [x] Configure API proxy to backend
+- [x] Install dependencies (axios/fetch, routing)
 
 ### 3.2 Design System (Keenetic-inspired)
 
 **Color Palette:**
 ```
-Background Main:    #0d1117
-Background Cards:   #161b22
+Background Main:    #0a0e14
+Background Cards:   #12171e
 Primary Accent:     #58a6ff (blue links/active)
 Success:            #3fb950 (connected status)
 Warning:            #d29922 (disabled badges)
-Text Primary:       #c9d1d9
+Text Primary:       #e6edf3
 Text Secondary:     #8b949e
-Border:             #30363d
+Border:             #21262d
 ```
 
 **Components:**
-- [ ] Card/Panel component
-- [ ] Status badge (connected/disabled)
-- [ ] Toggle switch
-- [ ] Data table
-- [ ] Navigation sidebar
-- [ ] Chart components (for traffic/resources)
+- [x] Card/Panel component
+- [x] Status badge (connected/disabled)
+- [x] Toggle switch
+- [x] Data table
+- [x] Navigation sidebar
+- [x] Progress components (linear + circular for traffic/resources)
 
 ### 3.3 Pages & Features
 
 **Dashboard Page:**
-- [ ] Router status summary
-- [ ] Resource usage (RAM, CPU) with visual indicators
-- [ ] Quick stats cards
+- [x] Router status summary
+- [x] Resource usage (RAM, CPU) with visual indicators
+- [x] Quick stats cards
 
 **Devices Page:**
-- [ ] Table of connected clients
-- [ ] Columns: Name, IP, MAC, Interface, Status, Actions
-- [ ] Inline editing for device name
-- [ ] Filtering by segment (Home/Secondary)
+- [x] Table of connected clients
+- [x] Columns: Name, IP, MAC, Interface, Status, Actions
+- [x] Inline editing for device name
+- [x] Filtering by segment (Home/Secondary)
 
 **System Page:**
-- [ ] Detailed resource consumption
-- [ ] Network interfaces status
-- [ ] Port status visualization
+- [x] Detailed resource consumption
+- [x] Network interfaces status
+- [x] Port status visualization
 
 ### 3.4 State Management
-- [ ] Set up React Query or SWR for data fetching
-- [ ] Auto-refresh for live data
-- [ ] Optimistic updates for modifications
+- [x] Set up React Query for data fetching
+- [x] Auto-refresh for live data
+- [x] Optimistic updates for modifications
 
 ---
 
 ## Phase 4: Integration
 
 ### 4.1 API Integration
-- [ ] Connect frontend to backend API
-- [ ] Handle loading/error states
-- [ ] Implement polling for real-time updates
+- [x] Connect frontend to backend API
+- [x] Handle loading/error states
+- [x] Implement polling for real-time updates
 
 ### 4.2 CORS & Proxy Configuration
-- [ ] Configure backend CORS headers
-- [ ] Set up Vite proxy for development
+- [x] Configure backend CORS headers
+- [x] Set up Vite proxy for development
 - [ ] Nginx configuration for production
 
 ---
@@ -207,9 +207,9 @@ Border:             #30363d
 ## Phase 5: Polish & Production
 
 ### 5.1 Error Handling
-- [ ] Backend: Graceful error responses
-- [ ] Frontend: User-friendly error messages
-- [ ] Handle router unreachable scenarios
+- [x] Backend: Graceful error responses
+- [x] Frontend: User-friendly error messages
+- [x] Handle router unreachable scenarios
 
 ### 5.2 Production Docker Setup
 - [ ] Multi-stage Dockerfile for frontend (build + nginx)
@@ -239,7 +239,7 @@ keenetic-public/
 │   ├── config.ru
 │   ├── app.rb
 │   ├── config/
-│   │   └── environment.rb
+│   │   └── puma.rb
 │   ├── lib/
 │   │   ├── keenetic.rb            # Main entry point
 │   │   └── keenetic/
@@ -275,46 +275,50 @@ keenetic-public/
     └── src/
         ├── main.tsx
         ├── App.tsx
+        ├── vite-env.d.ts
         ├── api/
         │   ├── client.ts
-        │   ├── devices.ts
-        │   └── system.ts
+        │   ├── types.ts
+        │   └── index.ts
         ├── components/
         │   ├── ui/
         │   │   ├── Card.tsx
         │   │   ├── Badge.tsx
         │   │   ├── Toggle.tsx
         │   │   ├── Table.tsx
-        │   │   └── Chart.tsx
-        │   ├── layout/
-        │   │   ├── Sidebar.tsx
-        │   │   └── Header.tsx
-        │   └── devices/
-        │       ├── DeviceList.tsx
-        │       └── DeviceRow.tsx
+        │   │   ├── Progress.tsx
+        │   │   ├── Input.tsx
+        │   │   └── index.ts
+        │   └── layout/
+        │       ├── Sidebar.tsx
+        │       ├── Header.tsx
+        │       ├── Layout.tsx
+        │       └── index.ts
         ├── pages/
         │   ├── Dashboard.tsx
         │   ├── Devices.tsx
-        │   └── System.tsx
+        │   ├── System.tsx
+        │   └── index.ts
         ├── hooks/
         │   ├── useDevices.ts
-        │   └── useSystem.ts
+        │   ├── useSystem.ts
+        │   ├── useNetwork.ts
+        │   └── index.ts
         └── styles/
-            ├── globals.css
-            └── variables.css
+            └── globals.css
 ```
 
 ---
 
 ## Implementation Order
 
-1. **Phase 1** → Docker setup with placeholder services
-2. **Phase 2.1-2.2** → Backend with Keenetic library (core functionality)
-3. **Phase 3.1-3.2** → Frontend skeleton with design system
-4. **Phase 2.3** → Backend API endpoints
-5. **Phase 3.3-3.4** → Frontend pages and features
-6. **Phase 4** → Integration and testing
-7. **Phase 5** → Production readiness
+1. **Phase 1** → Docker setup with placeholder services ✅
+2. **Phase 2.1-2.2** → Backend with Keenetic library (core functionality) ✅
+3. **Phase 3.1-3.2** → Frontend skeleton with design system ✅
+4. **Phase 2.3** → Backend API endpoints ✅
+5. **Phase 3.3-3.4** → Frontend pages and features ✅
+6. **Phase 4** → Integration and testing ✅
+7. **Phase 5** → Production readiness (partial)
 
 ---
 
@@ -340,4 +344,3 @@ FRONTEND_PORT=3000
 - `BACKEND_HOST` is for browser requests from frontend (default: `localhost`)
 - `VITE_API_URL` uses Docker service name (`backend`) for proxy (inter-container)
 - `VITE_BACKEND_URL` uses `BACKEND_HOST` for direct browser requests
-

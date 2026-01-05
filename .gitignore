@@ -8,6 +8,10 @@ frontend/.pnpm-store/
 
 # Build outputs
 frontend/dist/
+*.tsbuildinfo
+
+# Test artifacts
+backend/spec/examples.txt
 
 # IDE
 .idea/
@@ -18,4 +22,7 @@ frontend/dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
 
