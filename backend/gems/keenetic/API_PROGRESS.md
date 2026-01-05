@@ -41,8 +41,8 @@ Implementation status according to [KEENETIC_API.md](./KEENETIC_API.md) specific
 - [x] Get Interface by ID (`client.network.interface`)
 - [x] WAN Status (`client.network.wan_status`)
 - [x] LAN Interfaces (`client.network.lan_interfaces`)
-- [ ] Interface Statistics
-- [ ] Configure Interface
+- [x] Interface Statistics (`client.network.statistics`, `client.network.interface_statistics`)
+- [x] Configure Interface (`client.network.configure`)
 
 ## 6. Internet & WAN
 
