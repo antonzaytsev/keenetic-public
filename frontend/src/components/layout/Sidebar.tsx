@@ -1,19 +1,71 @@
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
+// SVG Icons for better visual representation
+const icons = {
+  dashboard: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  ),
+  devices: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+    </svg>
+  ),
+  interfaces: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="5" r="2" />
+      <circle cx="5" cy="19" r="2" />
+      <circle cx="19" cy="19" r="2" />
+      <path d="M12 7v4" />
+      <path d="M12 11l-5 6" />
+      <path d="M12 11l5 6" />
+    </svg>
+  ),
+  policies: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l8 4v6c0 5.5-3.5 10-8 12-4.5-2-8-6.5-8-12V6l8-4z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  ),
+  system: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
+  logo: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      {/* Router/WiFi inspired logo for Keenetic */}
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="3" fill="currentColor" />
+      <path d="M12 6a6 6 0 0 1 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M12 6a6 6 0 0 0-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+      <path d="M12 3a9 9 0 0 0-9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  ),
+};
+
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: '◈' },
-  { to: '/devices', label: 'Devices', icon: '◉' },
-  { to: '/interfaces', label: 'Interfaces', icon: '⬡' },
-  { to: '/policies', label: 'Policies', icon: '⬢' },
-  { to: '/system', label: 'System', icon: '◎' },
+  { to: '/', label: 'Dashboard', icon: icons.dashboard },
+  { to: '/devices', label: 'Devices', icon: icons.devices },
+  { to: '/interfaces', label: 'Interfaces', icon: icons.interfaces },
+  { to: '/policies', label: 'Policies', icon: icons.policies },
+  { to: '/system', label: 'System', icon: icons.system },
 ];
 
 export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar__logo">
-        <span className="sidebar__logo-icon">⬡</span>
+        <span className="sidebar__logo-icon">{icons.logo}</span>
         <span className="sidebar__logo-text">Keenetic</span>
       </div>
 
