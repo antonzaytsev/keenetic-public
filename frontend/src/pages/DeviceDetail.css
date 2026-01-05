@@ -316,3 +316,68 @@
   }
 }
 
+/* Wi-Fi Signal visualization */
+.wifi-signal {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wifi-signal__indicator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+}
+
+.wifi-signal__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+}
+
+.wifi-signal__bar {
+  width: 6px;
+  background: var(--border-color);
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.wifi-signal__bar:nth-child(1) { height: 6px; }
+.wifi-signal__bar:nth-child(2) { height: 12px; }
+.wifi-signal__bar:nth-child(3) { height: 18px; }
+.wifi-signal__bar:nth-child(4) { height: 24px; }
+
+/* Signal levels */
+.wifi-signal__indicator--excellent .wifi-signal__bar:nth-child(1),
+.wifi-signal__indicator--excellent .wifi-signal__bar:nth-child(2),
+.wifi-signal__indicator--excellent .wifi-signal__bar:nth-child(3),
+.wifi-signal__indicator--excellent .wifi-signal__bar:nth-child(4) {
+  background: var(--accent-success);
+}
+
+.wifi-signal__indicator--good .wifi-signal__bar:nth-child(1),
+.wifi-signal__indicator--good .wifi-signal__bar:nth-child(2),
+.wifi-signal__indicator--good .wifi-signal__bar:nth-child(3) {
+  background: var(--accent-success);
+}
+
+.wifi-signal__indicator--fair .wifi-signal__bar:nth-child(1),
+.wifi-signal__indicator--fair .wifi-signal__bar:nth-child(2) {
+  background: var(--accent-warning);
+}
+
+.wifi-signal__indicator--weak .wifi-signal__bar:nth-child(1) {
+  background: var(--accent-danger);
+}
+
+.wifi-signal__value {
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+

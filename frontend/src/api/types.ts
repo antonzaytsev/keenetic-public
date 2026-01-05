@@ -25,6 +25,14 @@ export interface Device {
   first_seen: string | null;
   last_seen: string | null;
   link: string | null;
+  // Wi-Fi association data (only for active Wi-Fi clients)
+  rssi: number | null;
+  txrate: number | null;
+  rxrate: number | null;
+  wifi_mode: string | null;
+  wifi_ht: boolean | null;
+  wifi_vht: boolean | null;
+  wifi_he: boolean | null;
 }
 
 export interface DevicesResponse {

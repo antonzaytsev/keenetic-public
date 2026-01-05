@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card, StatusBadge, Badge } from '../components/ui';
-import { useDevice, useUpdateDevice, usePolicies } from '../hooks';
+import { useDevice, useUpdateDevice, usePolicies, useMeshMembers } from '../hooks';
 import './DeviceDetail.css';
 
 function formatBytes(bytes: number | null): string {
@@ -41,14 +41,53 @@ function formatDateTime(dateStr: string | null): string {
   }
 }
 
+function formatRssi(rssi: number | null): { text: string; level: 'excellent' | 'good' | 'fair' | 'weak' } {
+  if (rssi === null) return { text: '-', level: 'weak' };
+  
+  let level: 'excellent' | 'good' | 'fair' | 'weak';
+  if (rssi >= -50) level = 'excellent';
+  else if (rssi >= -60) level = 'good';
+  else if (rssi >= -70) level = 'fair';
+  else level = 'weak';
+  
+  return { text: `${rssi} dBm`, level };
+}
+
+function formatLinkType(link: string | null): string {
+  if (!link) return '-';
+  const linkMap: Record<string, string> = {
+    'wifi': 'Wi-Fi',
+    'ethernet': 'Ethernet',
+    'Wifi': 'Wi-Fi',
+    'Ethernet': 'Ethernet',
+  };
+  return linkMap[link] || link;
+}
+
+function formatWifiMode(device: { wifi_he?: boolean | null; wifi_vht?: boolean | null; wifi_ht?: boolean | null; wifi_mode?: string | null }): string {
+  if (device.wifi_he) return 'Wi-Fi 6 (802.11ax)';
+  if (device.wifi_vht) return 'Wi-Fi 5 (802.11ac)';
+  if (device.wifi_ht) return 'Wi-Fi 4 (802.11n)';
+  if (device.wifi_mode) return device.wifi_mode;
+  return '-';
+}
+
 export function DeviceDetail() {
   const { mac } = useParams<{ mac: string }>();
   const navigate = useNavigate();
   const { data, isLoading, error, refetch } = useDevice(mac || '');
   const { data: policiesData } = usePolicies();
+  const { data: meshData } = useMeshMembers();
   const updateDevice = useUpdateDevice();
 
   const device = data?.device;
+
+  // Resolve mesh node CID to name
+  const getMeshNodeName = useCallback((cid: string | null) => {
+    if (!cid || !meshData?.members) return null;
+    const member = meshData.members.find(m => m.id === cid);
+    return member?.name || cid;
+  }, [meshData]);
 
   const handleNameEdit = useCallback(async (e: React.FocusEvent<HTMLSpanElement> | React.KeyboardEvent<HTMLSpanElement>) => {
     if ('key' in e && e.key !== 'Enter') return;
@@ -274,11 +313,36 @@ export function DeviceDetail() {
         <Card title="Connection Info" className="detail-card detail-card--wide">
           <div className="info-list">
             <InfoRow label="Status" value={device.active ? 'Online' : 'Offline'} highlight />
+            <InfoRow label="Connection Type" value={formatLinkType(device.link)} />
             <InfoRow label="Session Uptime" value={formatUptime(device.uptime)} />
             <InfoRow label="First Seen" value={formatDateTime(device.first_seen)} />
             <InfoRow label="Last Seen" value={formatDateTime(device.last_seen)} />
+            {device.mws_cid && (
+              <InfoRow label="Mesh Node" value={getMeshNodeName(device.mws_cid)} />
+            )}
           </div>
         </Card>
+
+        {/* Wi-Fi Signal - Only show for Wi-Fi devices with signal data */}
+        {device.rssi !== null && (
+          <Card title="Wi-Fi Signal" className="detail-card">
+            <div className="wifi-signal">
+              <div className={`wifi-signal__indicator wifi-signal__indicator--${formatRssi(device.rssi).level}`}>
+                <div className="wifi-signal__bars">
+                  <span className="wifi-signal__bar" />
+                  <span className="wifi-signal__bar" />
+                  <span className="wifi-signal__bar" />
+                  <span className="wifi-signal__bar" />
+                </div>
+                <span className="wifi-signal__value">{formatRssi(device.rssi).text}</span>
+              </div>
+              <div className="info-list">
+                <InfoRow label="Signal Quality" value={formatRssi(device.rssi).level.charAt(0).toUpperCase() + formatRssi(device.rssi).level.slice(1)} />
+                <InfoRow label="Wi-Fi Standard" value={formatWifiMode(device)} />
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );

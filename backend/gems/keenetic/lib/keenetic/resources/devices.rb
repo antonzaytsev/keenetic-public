@@ -41,22 +41,31 @@ module Keenetic
     #   - first-seen/last-seen: Timestamps
     #
     class Devices < Base
-      # Fetch all registered devices (hosts) with static IP info.
+      # Fetch all registered devices (hosts) with static IP info and Wi-Fi association data.
       #
       # == Keenetic API Request
-      #   GET /rci/show/ip/hotspot/host
+      #   GET /rci/show/ip/hotspot/host - device list
+      #   GET /rci/show/associations - Wi-Fi client data (rssi, txrate, rxrate, mode)
       #
       # Static IP info is included in the device data as dhcp.static: true
       # When static is true, the device's ip field is the reserved static IP.
       #
-      # @return [Array<Hash>] List of normalized device hashes with static_ip info
+      # For Wi-Fi connected devices, association data (signal strength, speed) is merged.
+      #
+      # @return [Array<Hash>] List of normalized device hashes with static_ip and Wi-Fi info
       # @example
       #   devices = client.devices.all
-      #   # => [{ mac: "AA:BB:CC:DD:EE:FF", name: "My Phone", active: true, static_ip: "192.168.1.100", ... }]
+      #   # => [{ mac: "AA:BB:CC:DD:EE:FF", name: "My Phone", active: true, static_ip: "192.168.1.100", rssi: -45, ... }]
       #
       def all
-        response = get('/rci/show/ip/hotspot/host')
-        normalize_devices(response)
+        # Fetch devices and associations
+        hosts_response = get('/rci/show/ip/hotspot/host')
+        associations_response = get('/rci/show/associations')
+
+        # Build MAC -> association lookup
+        associations_by_mac = build_associations_lookup(associations_response || {})
+
+        normalize_devices(hosts_response, associations_by_mac)
       end
 
       # Find a specific device by MAC address.
@@ -214,15 +223,39 @@ module Keenetic
 
       private
 
-      def normalize_devices(response)
-        # Response from /rci/show/ip/hotspot/host is an array directly
+      def build_associations_lookup(associations_response)
+        stations = associations_response['station'] || []
+        stations = [stations] unless stations.is_a?(Array)
+
+        stations.each_with_object({}) do |station, lookup|
+          next unless station.is_a?(Hash) && station['mac']
+
+          mac = station['mac'].upcase
+          lookup[mac] = {
+            rssi: station['rssi'],
+            txrate: station['txrate'],
+            rxrate: station['rxrate'],
+            mode: station['mode'],
+            ht: station['ht'],
+            vht: station['vht'],
+            he: station['he'],
+            mcs: station['mcs'],
+            gi: station['gi']
+          }
+        end
+      end
+
+      def normalize_devices(response, associations_by_mac = {})
+        return [] if response.nil?
+
+        # Response can be an array directly or wrapped in 'host' key
         hosts = response.is_a?(Array) ? response : (response['host'] || [response])
         hosts = [hosts] unless hosts.is_a?(Array)
 
-        hosts.map { |host| normalize_device(host) }.compact
+        hosts.map { |host| normalize_device(host, associations_by_mac) }.compact
       end
 
-      def normalize_device(host)
+      def normalize_device(host, associations_by_mac = {})
         return nil unless host.is_a?(Hash)
         
         mac = host['mac']
@@ -236,6 +269,9 @@ module Keenetic
         wifi_ap = mws_info.is_a?(Hash) ? mws_info['ap'] : host['ap']
         # Mesh node ID (cid) identifies which mesh node the device is connected to
         mws_cid = mws_info.is_a?(Hash) ? mws_info['cid'] : nil
+
+        # Get Wi-Fi association data if available
+        wifi_data = associations_by_mac[mac&.upcase] || {}
 
         {
           mac: mac,
@@ -256,7 +292,15 @@ module Keenetic
           uptime: host['uptime'],
           first_seen: host['first-seen'],
           last_seen: host['last-seen'],
-          link: host['link']
+          link: host['link'],
+          # Wi-Fi association data (only present for active Wi-Fi clients)
+          rssi: wifi_data[:rssi],
+          txrate: wifi_data[:txrate],
+          rxrate: wifi_data[:rxrate],
+          wifi_mode: wifi_data[:mode],
+          wifi_ht: wifi_data[:ht],
+          wifi_vht: wifi_data[:vht],
+          wifi_he: wifi_data[:he]
         }
       end
     end
