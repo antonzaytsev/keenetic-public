@@ -60,10 +60,11 @@ Implementation status according to [KEENETIC_API.md](./KEENETIC_API.md) specific
 
 ## 8. DHCP
 
-- [ ] DHCP Leases
-- [ ] Static DHCP Bindings
-- [ ] Add Static DHCP Binding
-- [ ] Delete Static DHCP Binding
+- [x] DHCP Leases (`client.dhcp.leases`)
+- [x] Static DHCP Bindings (`client.dhcp.bindings`, `client.dhcp.find_binding`)
+- [x] Add Static DHCP Binding (`client.dhcp.create_binding`)
+- [x] Update Static DHCP Binding (`client.dhcp.update_binding`)
+- [x] Delete Static DHCP Binding (`client.dhcp.delete_binding`)
 
 ## 9. Routing
 

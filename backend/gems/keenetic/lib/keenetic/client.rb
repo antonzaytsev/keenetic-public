@@ -87,6 +87,11 @@ module Keenetic
       @policies ||= Resources::Policies.new(self)
     end
 
+    # @return [Resources::DHCP] DHCP resource
+    def dhcp
+      @dhcp ||= Resources::DHCP.new(self)
+    end
+
     # Make a GET request to the router API.
     #
     # == Keenetic API

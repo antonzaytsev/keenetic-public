@@ -243,6 +243,110 @@ class App < Roda
           end
         end
       end
+
+      # DHCP endpoints
+      r.on 'dhcp' do
+        r.is 'leases' do
+          # GET /api/dhcp/leases - list active DHCP leases
+          r.get do
+            leases = keenetic_client.dhcp.leases
+            {
+              leases: leases,
+              count: leases.size,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+
+        r.on 'bindings' do
+          r.is do
+            # GET /api/dhcp/bindings - list static DHCP bindings
+            r.get do
+              bindings = keenetic_client.dhcp.bindings
+              {
+                bindings: bindings,
+                count: bindings.size,
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            # POST /api/dhcp/bindings - create static DHCP binding
+            r.post do
+              params = r.params
+              mac = params['mac']
+              ip = params['ip']
+              name = params['name']
+
+              if mac.nil? || mac.empty? || ip.nil? || ip.empty?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'Both mac and ip are required',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              result = keenetic_client.dhcp.create_binding(mac: mac, ip: ip, name: name)
+              {
+                success: true,
+                result: result,
+                timestamp: Time.now.iso8601
+              }
+            end
+          end
+
+          r.on String do |mac_param|
+            mac = URI.decode_www_form_component(mac_param)
+
+            # GET /api/dhcp/bindings/:mac - get specific binding
+            r.get do
+              binding = keenetic_client.dhcp.find_binding(mac: mac)
+              if binding.nil?
+                response.status = 404
+                next {
+                  error: 'Not Found',
+                  message: "DHCP binding not found for MAC: #{mac}",
+                  timestamp: Time.now.iso8601
+                }
+              end
+              { binding: binding, timestamp: Time.now.iso8601 }
+            end
+
+            # PATCH /api/dhcp/bindings/:mac - update binding
+            r.patch do
+              params = r.params
+              ip = params['ip']
+              name = params['name']
+
+              if ip.nil? && name.nil?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'At least one of ip or name is required',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              result = keenetic_client.dhcp.update_binding(mac: mac, ip: ip, name: name)
+              {
+                success: true,
+                result: result,
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            # DELETE /api/dhcp/bindings/:mac - delete binding
+            r.delete do
+              result = keenetic_client.dhcp.delete_binding(mac: mac)
+              {
+                success: true,
+                result: result,
+                timestamp: Time.now.iso8601
+              }
+            end
+          end
+        end
+      end
     end
   end
 end
