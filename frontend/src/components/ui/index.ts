@@ -4,4 +4,5 @@ export { Toggle } from './Toggle';
 export { Table, type Column } from './Table';
 export { Progress, CircularProgress } from './Progress';
 export { Input } from './Input';
+export { Chart } from './Chart';
 

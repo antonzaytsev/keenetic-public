@@ -146,6 +146,57 @@ export interface AccessPointsResponse {
   timestamp: string;
 }
 
+// Internet status types
+export interface InternetStatus {
+  connected: boolean;
+  gateway: string | null;
+  dns: string[];
+  checked: string | null;
+  checking: boolean | null;
+}
+
+export interface InternetStatusResponse {
+  status: InternetStatus;
+  timestamp: string;
+}
+
+export interface InternetSpeed {
+  interface: string | null;
+  rxbytes: number | null;
+  txbytes: number | null;
+  rxpackets: number | null;
+  txpackets: number | null;
+  uptime: number | null;
+}
+
+export interface InternetSpeedResponse {
+  speed: InternetSpeed | null;
+  timestamp: string;
+}
+
+// Physical ports types
+export interface Port {
+  id: string;
+  port: number | null;
+  type: 'gigabit' | 'fast' | 'sfp' | 'usb' | 'unknown';
+  link: boolean;
+  speed: number | null;
+  duplex: string | null;
+  rxbytes: number | null;
+  txbytes: number | null;
+  rxpackets: number | null;
+  txpackets: number | null;
+  rxerrors: number | null;
+  txerrors: number | null;
+  media: string | null;
+}
+
+export interface PortsResponse {
+  ports: Port[];
+  count: number;
+  timestamp: string;
+}
+
 // Health check
 export interface HealthResponse {
   status: string;

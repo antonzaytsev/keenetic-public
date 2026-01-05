@@ -30,6 +30,14 @@ module Keenetic
       @wifi ||= Resources::WiFi.new(self)
     end
 
+    def internet
+      @internet ||= Resources::Internet.new(self)
+    end
+
+    def ports
+      @ports ||= Resources::Ports.new(self)
+    end
+
     def get(path, params = {})
       request(:get, path, params: params)
     end

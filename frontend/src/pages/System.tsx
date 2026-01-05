@@ -1,5 +1,6 @@
+import { useCallback } from 'react';
 import { Header } from '../components/layout';
-import { Card, Table, ConnectionBadge, Progress, Badge, type Column } from '../components/ui';
+import { Card, Table, ConnectionBadge, Progress, Badge, Chart, type Column } from '../components/ui';
 import { useSystemInfo, useSystemResources, useNetworkInterfaces } from '../hooks';
 import type { NetworkInterface } from '../api';
 import './System.css';
@@ -36,6 +37,11 @@ export function System() {
   const { data: systemInfo, isLoading: infoLoading } = useSystemInfo();
   const { data: resources } = useSystemResources();
   const { data: interfaces, isLoading: interfacesLoading } = useNetworkInterfaces();
+
+  const getResourceData = useCallback(() => ({
+    cpu: resources?.resources.cpu?.load_percent ?? 0,
+    memory: resources?.resources.memory?.used_percent ?? 0,
+  }), [resources]);
 
   const interfaceColumns: Column<NetworkInterface>[] = [
     {
@@ -170,6 +176,20 @@ export function System() {
           )}
         </Card>
       </div>
+
+      {/* Resource History Chart */}
+      <Card title="Resource Usage History" className="chart-card">
+        <Chart
+          series={[
+            { key: 'cpu', label: 'CPU', color: '#22c55e' },
+            { key: 'memory', label: 'Memory', color: '#3b82f6' },
+          ]}
+          getData={getResourceData}
+          maxPoints={60}
+          height={220}
+          refreshInterval={3000}
+        />
+      </Card>
 
       {/* Interfaces */}
       <Card title="Network Interfaces" padding="none" className="interfaces-card">

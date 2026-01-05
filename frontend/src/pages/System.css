@@ -97,6 +97,11 @@
   color: var(--accent-primary);
 }
 
+/* Chart card */
+.chart-card {
+  margin-bottom: 1.5rem;
+}
+
 /* Interfaces card */
 .interfaces-card {
   overflow: hidden;

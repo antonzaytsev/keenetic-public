@@ -1,6 +1,6 @@
 import { Header } from '../components/layout';
-import { Card, CircularProgress, Progress, StatusBadge } from '../components/ui';
-import { useSystemResources, useSystemInfo, useDevices, useNetworkInterfaces } from '../hooks';
+import { Card, CircularProgress, Progress } from '../components/ui';
+import { useSystemResources, useSystemInfo, useDevices, useNetworkInterfaces, useInternetStatus } from '../hooks';
 import './Dashboard.css';
 
 function formatUptime(seconds: number | null): string {
@@ -31,10 +31,12 @@ export function Dashboard() {
   const { data: systemInfo } = useSystemInfo();
   const { data: devices } = useDevices();
   const { data: interfaces } = useNetworkInterfaces();
+  const { data: internetStatus } = useInternetStatus();
 
   const activeDevices = devices?.devices.filter((d) => d.active).length ?? 0;
   const totalDevices = devices?.count ?? 0;
   const wanInterface = interfaces?.interfaces.find((i) => i.defaultgw);
+  const isOnline = internetStatus?.status.connected ?? false;
 
   return (
     <div className="dashboard">
@@ -42,6 +44,24 @@ export function Dashboard() {
         title="Dashboard" 
         subtitle={systemInfo?.info.model ? `${systemInfo.info.model} • ${systemInfo.info.firmware_version}` : undefined}
       />
+
+      {/* Connection Status Banner */}
+      <div className={`connection-banner ${isOnline ? 'connection-banner--online' : 'connection-banner--offline'}`}>
+        <div className="connection-banner__indicator" />
+        <div className="connection-banner__content">
+          <span className="connection-banner__status">{isOnline ? 'Online' : 'Offline'}</span>
+          <span className="connection-banner__detail">
+            {isOnline 
+              ? `Connected via ${wanInterface?.address ?? 'WAN'}` 
+              : 'No internet connection'}
+          </span>
+        </div>
+        {isOnline && wanInterface?.gateway && (
+          <div className="connection-banner__meta">
+            <span>Gateway: {wanInterface.gateway}</span>
+          </div>
+        )}
+      </div>
 
       {/* Stats row */}
       <div className="dashboard__stats">
@@ -61,7 +81,7 @@ export function Dashboard() {
             <div className="stat-card__label">Uptime</div>
           </div>
           <div className="stat-card__meta">
-            <StatusBadge active={true} />
+            <span className="stat-card__detail">Since boot</span>
           </div>
         </Card>
 
@@ -71,7 +91,7 @@ export function Dashboard() {
             <div className="stat-card__label">WAN IP</div>
           </div>
           <div className="stat-card__meta">
-            <StatusBadge active={wanInterface?.connected ?? false} />
+            <span className="stat-card__detail">{wanInterface?.id ?? 'WAN'}</span>
           </div>
         </Card>
 
@@ -157,24 +177,6 @@ export function Dashboard() {
           )}
         </Card>
       </div>
-
-      {/* Recent devices */}
-      <Card title="Recent Devices" className="recent-devices-card">
-        <div className="recent-devices">
-          {devices?.devices.slice(0, 5).map((device) => (
-            <div key={device.mac} className="recent-device">
-              <div className="recent-device__info">
-                <span className="recent-device__name">{device.name || device.hostname || 'Unknown'}</span>
-                <span className="recent-device__ip">{device.ip}</span>
-              </div>
-              <StatusBadge active={device.active} />
-            </div>
-          ))}
-          {(!devices || devices.devices.length === 0) && (
-            <div className="recent-devices__empty">No devices found</div>
-          )}
-        </div>
-      </Card>
     </div>
   );
 }

@@ -7,6 +7,8 @@ require_relative 'keenetic/resources/devices'
 require_relative 'keenetic/resources/system'
 require_relative 'keenetic/resources/network'
 require_relative 'keenetic/resources/wifi'
+require_relative 'keenetic/resources/internet'
+require_relative 'keenetic/resources/ports'
 
 # Keenetic Router API Client
 #
@@ -43,6 +45,13 @@ require_relative 'keenetic/resources/wifi'
 #   # WiFi
 #   client.wifi.access_points  # WiFi networks
 #   client.wifi.clients        # Connected WiFi clients
+#
+#   # Internet
+#   client.internet.status     # Internet connection status
+#   client.internet.speed      # Current WAN speed stats
+#
+#   # Ports
+#   client.ports.all           # Physical port statuses
 #
 # == Error Handling
 #

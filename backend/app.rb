@@ -140,6 +140,43 @@ class App < Roda
         end
       end
 
+      # Internet status endpoints
+      r.on 'internet' do
+        r.is 'status' do
+          r.get do
+            status = keenetic_client.internet.status
+            { 
+              status: status,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+
+        r.is 'speed' do
+          r.get do
+            speed = keenetic_client.internet.speed
+            { 
+              speed: speed,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+      end
+
+      # Physical ports endpoints
+      r.on 'ports' do
+        r.is do
+          r.get do
+            ports = keenetic_client.ports.all
+            { 
+              ports: ports,
+              count: ports.size,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+      end
+
       # WiFi endpoints (bonus)
       r.on 'wifi' do
         r.is 'access-points' do
