@@ -9,6 +9,7 @@ require_relative 'keenetic/resources/network'
 require_relative 'keenetic/resources/wifi'
 require_relative 'keenetic/resources/internet'
 require_relative 'keenetic/resources/ports'
+require_relative 'keenetic/resources/policies'
 
 # Keenetic Router API Client
 #

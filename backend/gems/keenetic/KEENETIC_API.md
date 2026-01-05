@@ -125,9 +125,9 @@ May be returned as:
 
 Always check for both when parsing.
 
-### Batch Requests
+### Batch Requests (IMPORTANT)
 
-Multiple commands can be sent in one request:
+**All write commands MUST be sent as arrays to `/rci/`:**
 
 ```http
 POST /rci/ HTTP/1.1
@@ -140,6 +140,25 @@ Content-Type: application/json
 ```
 
 Response is an array in the same order.
+
+> **⚠️ Critical**: Even single write commands must be wrapped in an array.
+> The simplified paths like `POST /rci/ip/hotspot/host` do NOT work for write operations.
+
+### MAC Address Format
+
+- **Always use lowercase** MAC addresses in write operations
+- Example: `aa:bb:cc:dd:ee:ff` (not `AA:BB:CC:DD:EE:FF`)
+- Colons required, not hyphens
+
+### Command Structure
+
+Write commands use nested JSON objects representing the command path:
+
+```json
+[{"ip": {"hotspot": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "permit": true}}}}]
+```
+
+This is equivalent to CLI command: `ip hotspot host aa:bb:cc:dd:ee:ff permit`
 
 ---
 
@@ -333,53 +352,135 @@ Response is an array in the same order.
 
 ---
 
-### 4.2 Update Device
+### 4.2 Update Device Name
 
-**Purpose**: Update device name, access policy, or schedule.
+**Purpose**: Update user-assigned device name.
 
 | | |
 |---|---|
-| **Endpoint** | `POST /rci/ip/hotspot/host` |
-| **Method** | POST |
+| **Endpoint** | `POST /rci/` |
+| **Method** | POST (array format) |
+
+> **⚠️ Important**: Device names are set via `known.host`, NOT `ip.hotspot.host`
 
 **Request Fields**:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `mac` | string | Yes | Device MAC address |
-| `name` | string | No | New device name |
-| `access` | string | No | "permit" or "deny" |
-| `schedule` | string | No | Schedule name |
+| `mac` | string | Yes | Device MAC address (lowercase) |
+| `name` | string | Yes | New device name |
 
 **Request Example**:
 
 ```json
-{
-  "mac": "AA:BB:CC:DD:EE:FF",
-  "name": "Living Room TV",
-  "access": "permit"
-}
+[{"known": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "name": "Living Room TV"}}}]
+```
+
+**Response Example** (success):
+
+```json
+[{"known": {"host": {"status": [{"status": "message", "code": "9175042", "ident": "Core::KnownHosts", "message": "host \"Living Room TV\" has been updated."}]}}}]
 ```
 
 ---
 
-### 4.3 Delete Device Registration
+### 4.3 Update Device Access Policy
+
+**Purpose**: Update device access policy (permit/deny) and schedule.
+
+| | |
+|---|---|
+| **Endpoint** | `POST /rci/` |
+| **Method** | POST (array format) |
+
+**Request Fields**:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `mac` | string | Yes | Device MAC address (lowercase) |
+| `permit` | boolean | No | Set to `true` to permit access |
+| `deny` | boolean | No | Set to `true` to deny access |
+| `schedule` | string | No | Schedule name for access control |
+| `priority` | integer | No | Device priority (1-9) |
+
+**Request Example** (permit access):
+
+```json
+[{"ip": {"hotspot": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "permit": true}}}}]
+```
+
+**Request Example** (deny access):
+
+```json
+[{"ip": {"hotspot": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "deny": true}}}}]
+```
+
+**Response Example** (success):
+
+```json
+[{"ip": {"hotspot": {"host": {"permit": {"status": [{"status": "message", "message": "rule \"permit\" applied to host \"aa:bb:cc:dd:ee:ff\"."}]}}}}}]
+```
+
+---
+
+### 4.4 Combined Device Update
+
+**Purpose**: Update both name and access policy in one request.
+
+When updating multiple properties, send multiple commands in the array:
+
+```json
+[
+  {"known": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "name": "Living Room TV"}}},
+  {"ip": {"hotspot": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "permit": true, "priority": 6}}}}
+]
+```
+
+---
+
+### 4.5 Delete Device Registration
 
 **Purpose**: Remove a device from the registered list.
 
 | | |
 |---|---|
-| **Endpoint** | `POST /rci/ip/hotspot/host` |
-| **Method** | POST |
+| **Endpoint** | `POST /rci/` |
+| **Method** | POST (array format) |
 
 **Request Example**:
 
 ```json
-{
-  "mac": "AA:BB:CC:DD:EE:FF",
-  "no": true
-}
+[{"ip": {"hotspot": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "no": true}}}}]
 ```
+
+---
+
+### 4.6 Full Device Update (as sent by Keenetic Web UI)
+
+The Keenetic web interface sends a comprehensive update with multiple commands:
+
+```json
+[
+  {"interface": {"mac": {"band": {"mac": "aa:bb:cc:dd:ee:ff", "no": true}}, "name": "Bridge0"}},
+  {"interface": {"mac": {"band": {"mac": "aa:bb:cc:dd:ee:ff", "no": true}}, "name": "Bridge2"}},
+  {"known": {"host": {"name": "Device Name", "mac": "aa:bb:cc:dd:ee:ff"}}},
+  {"ip": {"dhcp": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "no": true}}}},
+  {"ip": {"hotspot": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "conform": true, "permit": true, "policy": {"no": true}, "schedule": {"no": true}}}}},
+  {"ip": {"hotspot": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "priority": 6}}}},
+  {"ip": {"traffic-shape": {"host": {"mac": "aa:bb:cc:dd:ee:ff", "no": true}}}},
+  {"system": {"configuration": {"save": {}}}}
+]
+```
+
+Key commands explained:
+- `known.host`: Sets the device name
+- `ip.hotspot.host.permit`: Permits device access
+- `ip.hotspot.host.deny`: Denies device access  
+- `ip.hotspot.host.priority`: Sets device priority
+- `ip.hotspot.host.policy`: Assigns routing policy (VPN, etc.)
+- `ip.hotspot.host.schedule`: Assigns access schedule
+- `ip.traffic-shape.host`: Traffic shaping settings
+- `system.configuration.save`: Saves configuration to flash
 
 ---
 
@@ -840,6 +941,106 @@ Wi-Fi interfaces are included in the standard interface list with additional fie
 |---|---|
 | **Endpoint** | `GET /rci/show/ip/arp` |
 | **Method** | GET |
+
+---
+
+### 9.4 Routing Policies
+
+**Purpose**: Get configured routing policies (VPN tunnels, traffic routing rules).
+
+| | |
+|---|---|
+| **Endpoint** | `POST /rci/` (batch) |
+| **Method** | POST |
+
+**Request Body**:
+
+```json
+[{"show":{"sc":{"ip":{"policy":{}}}}}]
+```
+
+**Response Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Policy0..N` | object | Policy object keyed by ID |
+| `description` | string | Policy name (prefix `!` removed for display) |
+| `permit` | array | List of permitted interfaces |
+| `permit[].interface` | string | Interface name (e.g., `Wireguard0`) |
+| `permit[].enabled` | boolean | Whether this interface is active |
+| `permit[].no` | boolean | If true, interface is disabled |
+
+**Response Example**:
+
+```json
+[{
+  "show": {
+    "sc": {
+      "ip": {
+        "policy": {
+          "Policy0": {
+            "description": "!Latvia",
+            "permit": [
+              { "interface": "Wireguard0", "enabled": true },
+              { "interface": "ISP", "enabled": false }
+            ]
+          },
+          "Policy1": {
+            "description": "!Germany",
+            "permit": [
+              { "interface": "OpenVPN0", "enabled": true }
+            ]
+          }
+        }
+      }
+    }
+  }
+}]
+```
+
+---
+
+### 9.5 Device Policy Assignments
+
+**Purpose**: Get which devices are assigned to which routing policies.
+
+| | |
+|---|---|
+| **Endpoint** | `POST /rci/` (batch) |
+| **Method** | POST |
+
+**Request Body**:
+
+```json
+[{"show":{"sc":{"ip":{"hotspot":{"host":{}}}}}}]
+```
+
+**Response Fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `host` | array | List of hosts with policy assignments |
+| `host[].mac` | string | Device MAC address |
+| `host[].policy` | string | Policy ID assigned to device (e.g., `Policy0`) |
+
+**Response Example**:
+
+```json
+[{
+  "show": {
+    "sc": {
+      "ip": {
+        "hotspot": {
+          "host": [
+            { "mac": "00:11:22:33:44:55", "policy": "Policy0" },
+            { "mac": "AA:BB:CC:DD:EE:FF", "policy": "Policy1" }
+          ]
+        }
+      }
+    }
+  }
+}]
+```
 
 ---
 

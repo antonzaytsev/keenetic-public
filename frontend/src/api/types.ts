@@ -203,6 +203,27 @@ export interface HealthResponse {
   timestamp: string;
 }
 
+// Policy types
+export interface Policy {
+  id: string;
+  description: string;
+  name: string;
+  interfaces: string[];
+  interface_count: number;
+}
+
+export interface PoliciesResponse {
+  policies: Policy[];
+  device_assignments: Record<string, string>;
+  count: number;
+  timestamp: string;
+}
+
+export interface PolicyResponse {
+  policy: Policy;
+  timestamp: string;
+}
+
 // API Error
 export interface ApiError {
   error: string;

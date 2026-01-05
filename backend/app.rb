@@ -1,5 +1,6 @@
 require 'roda'
 require 'json'
+require 'uri'
 require_relative 'gems/keenetic/lib/keenetic'
 
 # Configure Keenetic library with environment variables
@@ -71,7 +72,10 @@ class App < Roda
           end
         end
 
-        r.on String do |mac|
+        r.on String do |mac_param|
+          # Decode URL-encoded MAC address
+          mac = URI.decode_www_form_component(mac_param)
+          
           # GET /api/devices/:mac - single device details
           r.get do
             device = keenetic_client.devices.find(mac: mac)
@@ -198,6 +202,33 @@ class App < Roda
               count: clients.size,
               timestamp: Time.now.iso8601
             }
+          end
+        end
+      end
+
+      # Policies endpoints
+      r.on 'policies' do
+        r.is do
+          # GET /api/policies - list all routing policies
+          r.get do
+            policies = keenetic_client.policies.all
+            device_assignments = keenetic_client.policies.device_assignments
+            {
+              policies: policies,
+              device_assignments: device_assignments,
+              count: policies.size,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+
+        r.on String do |policy_id|
+          policy_id = URI.decode_www_form_component(policy_id)
+
+          # GET /api/policies/:id - get specific policy
+          r.get do
+            policy = keenetic_client.policies.find(id: policy_id)
+            { policy: policy, timestamp: Time.now.iso8601 }
           end
         end
       end

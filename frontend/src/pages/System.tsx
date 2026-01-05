@@ -1,21 +1,8 @@
 import { useCallback } from 'react';
 import { Header } from '../components/layout';
-import { Card, Table, ConnectionBadge, Progress, Badge, Chart, type Column } from '../components/ui';
-import { useSystemInfo, useSystemResources, useNetworkInterfaces } from '../hooks';
-import type { NetworkInterface } from '../api';
+import { Card, Progress, Chart } from '../components/ui';
+import { useSystemInfo, useSystemResources } from '../hooks';
 import './System.css';
-
-function formatBytes(bytes: number | null): string {
-  if (bytes === null) return '-';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let i = 0;
-  let value = bytes;
-  while (value >= 1024 && i < units.length - 1) {
-    value /= 1024;
-    i++;
-  }
-  return `${value.toFixed(2)} ${units[i]}`;
-}
 
 function formatUptime(seconds: number | null): string {
   if (!seconds) return 'N/A';
@@ -36,83 +23,17 @@ function formatUptime(seconds: number | null): string {
 export function System() {
   const { data: systemInfo, isLoading: infoLoading } = useSystemInfo();
   const { data: resources } = useSystemResources();
-  const { data: interfaces, isLoading: interfacesLoading } = useNetworkInterfaces();
 
   const getResourceData = useCallback(() => ({
     cpu: resources?.resources.cpu?.load_percent ?? 0,
     memory: resources?.resources.memory?.used_percent ?? 0,
   }), [resources]);
 
-  const interfaceColumns: Column<NetworkInterface>[] = [
-    {
-      key: 'status',
-      header: 'Status',
-      width: '100px',
-      render: (iface) => (
-        <ConnectionBadge connected={iface.connected} />
-      ),
-    },
-    {
-      key: 'id',
-      header: 'Interface',
-      render: (iface) => (
-        <div className="interface-name">
-          <span className="interface-name__id">{iface.id}</span>
-          {iface.description && (
-            <span className="interface-name__desc">{iface.description}</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'type',
-      header: 'Type',
-      render: (iface) => (
-        <Badge variant={iface.defaultgw ? 'info' : 'neutral'} size="sm">
-          {iface.type || 'unknown'}
-        </Badge>
-      ),
-    },
-    {
-      key: 'address',
-      header: 'IP Address',
-      render: (iface) => (
-        <span className="mono-text">{iface.address || '-'}</span>
-      ),
-    },
-    {
-      key: 'mac',
-      header: 'MAC',
-      render: (iface) => (
-        <span className="mono-text mono-text--muted">{iface.mac || '-'}</span>
-      ),
-    },
-    {
-      key: 'traffic',
-      header: 'Traffic',
-      align: 'right',
-      render: (iface) => (
-        <div className="interface-traffic">
-          <span className="interface-traffic__rx">↓ {formatBytes(iface.rxbytes)}</span>
-          <span className="interface-traffic__tx">↑ {formatBytes(iface.txbytes)}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'uptime',
-      header: 'Uptime',
-      align: 'right',
-      render: (iface) => (
-        <span className="mono-text--muted">{formatUptime(iface.uptime)}</span>
-      ),
-    },
-  ];
-
   return (
     <div className="system-page">
       <Header 
         title="System" 
-        subtitle="Router information and network interfaces"
+        subtitle="Router information and resource usage"
       />
 
       {/* System Info */}
@@ -188,17 +109,6 @@ export function System() {
           maxPoints={60}
           height={220}
           refreshInterval={3000}
-        />
-      </Card>
-
-      {/* Interfaces */}
-      <Card title="Network Interfaces" padding="none" className="interfaces-card">
-        <Table
-          columns={interfaceColumns}
-          data={interfaces?.interfaces ?? []}
-          keyExtractor={(iface) => iface.id}
-          loading={interfacesLoading}
-          emptyMessage="No interfaces found"
         />
       </Card>
     </div>

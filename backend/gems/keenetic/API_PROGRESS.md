@@ -31,7 +31,8 @@ Implementation status according to [KEENETIC_API.md](./KEENETIC_API.md) specific
 - [x] List All Devices (`client.devices.all`)
 - [x] List Active Devices (`client.devices.active`)
 - [x] Find Device (`client.devices.find`)
-- [x] Update Device (`client.devices.update`)
+- [x] Update Device Name (`client.devices.update` via `known.host`)
+- [x] Update Device Access (`client.devices.update` via `ip.hotspot.host`)
 - [x] Delete Device Registration (`client.devices.delete`)
 
 ## 5. Network Interfaces
@@ -69,6 +70,12 @@ Implementation status according to [KEENETIC_API.md](./KEENETIC_API.md) specific
 - [ ] Routing Table
 - [ ] Add Static Route
 - [ ] ARP Table
+
+## 9.1 Routing Policies
+
+- [x] List All Policies (`client.policies.all`)
+- [x] Device Policy Assignments (`client.policies.device_assignments`)
+- [x] Find Policy by ID (`client.policies.find`)
 
 ## 10. NAT & Port Forwarding
 

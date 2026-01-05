@@ -1,0 +1,44 @@
+.interfaces-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.interfaces-table-card {
+  overflow: hidden;
+}
+
+/* Interface Name Column */
+.interface-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.interface-name__id {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.interface-name__desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Traffic Column */
+.interface-traffic {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.interface-traffic__rx {
+  color: var(--color-success);
+}
+
+.interface-traffic__tx {
+  color: var(--color-info);
+}
+

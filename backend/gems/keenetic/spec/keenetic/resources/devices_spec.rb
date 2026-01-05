@@ -108,24 +108,62 @@ RSpec.describe Keenetic::Resources::Devices do
   end
 
   describe '#update' do
-    it 'sends update request with provided attributes' do
-      update_stub = stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
-        .with(body: { mac: 'AA:BB:CC:DD:EE:FF', name: 'New Name' }.to_json)
-        .to_return(status: 200, body: '{}')
+    it 'sends name update via known.host' do
+      update_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [{ 'known' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'name' => 'New Name' } } }].to_json)
+        .to_return(status: 200, body: '[{}]')
 
-      devices.update(mac: 'aa:bb:cc:dd:ee:ff', name: 'New Name')
+      devices.update(mac: 'AA:BB:CC:DD:EE:FF', name: 'New Name')
 
       expect(update_stub).to have_been_requested
     end
 
-    it 'only sends allowed attributes' do
-      update_stub = stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
-        .with(body: { mac: 'AA:BB:CC:DD:EE:FF', access: 'permit' }.to_json)
-        .to_return(status: 200, body: '{}')
+    it 'sends permit access via ip.hotspot.host' do
+      update_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [{ 'ip' => { 'hotspot' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'permit' => true } } } }].to_json)
+        .to_return(status: 200, body: '[{}]')
 
-      devices.update(mac: 'aa:bb:cc:dd:ee:ff', access: 'permit')
+      devices.update(mac: 'AA:BB:CC:DD:EE:FF', access: 'permit')
 
       expect(update_stub).to have_been_requested
+    end
+
+    it 'sends deny access via ip.hotspot.host' do
+      update_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [{ 'ip' => { 'hotspot' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'deny' => true } } } }].to_json)
+        .to_return(status: 200, body: '[{}]')
+
+      devices.update(mac: 'AA:BB:CC:DD:EE:FF', access: 'deny')
+
+      expect(update_stub).to have_been_requested
+    end
+
+    it 'sends name and access as separate commands' do
+      update_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [
+          { 'known' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'name' => 'Test' } } },
+          { 'ip' => { 'hotspot' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'deny' => true, 'schedule' => 'night' } } } }
+        ].to_json)
+        .to_return(status: 200, body: '[{},{}]')
+
+      devices.update(mac: 'AA:BB:CC:DD:EE:FF', name: 'Test', access: 'deny', schedule: 'night')
+
+      expect(update_stub).to have_been_requested
+    end
+
+    it 'normalizes MAC to lowercase' do
+      update_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [{ 'known' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'name' => 'Test' } } }].to_json)
+        .to_return(status: 200, body: '[{}]')
+
+      devices.update(mac: 'AA:BB:CC:DD:EE:FF', name: 'Test')
+
+      expect(update_stub).to have_been_requested
+    end
+
+    it 'returns empty hash when no attributes provided' do
+      result = devices.update(mac: 'AA:BB:CC:DD:EE:FF')
+      expect(result).to eq({})
     end
   end
 
@@ -148,33 +186,33 @@ RSpec.describe Keenetic::Resources::Devices do
   end
 
   describe '#delete' do
-    it 'sends delete request with mac and no flag' do
-      delete_stub = stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
-        .with(body: { mac: 'AA:BB:CC:DD:EE:FF', no: true }.to_json)
-        .to_return(status: 200, body: '{}')
+    it 'sends delete request as array with mac and no flag' do
+      delete_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [{ 'ip' => { 'hotspot' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'no' => true } } } }].to_json)
+        .to_return(status: 200, body: '[{}]')
 
       devices.delete(mac: 'AA:BB:CC:DD:EE:FF')
 
       expect(delete_stub).to have_been_requested
     end
 
-    it 'normalizes MAC address to uppercase' do
-      delete_stub = stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
-        .with(body: { mac: 'AA:BB:CC:DD:EE:FF', no: true }.to_json)
-        .to_return(status: 200, body: '{}')
+    it 'normalizes MAC address to lowercase' do
+      delete_stub = stub_request(:post, 'http://192.168.1.1/rci/')
+        .with(body: [{ 'ip' => { 'hotspot' => { 'host' => { 'mac' => 'aa:bb:cc:dd:ee:ff', 'no' => true } } } }].to_json)
+        .to_return(status: 200, body: '[{}]')
 
-      devices.delete(mac: 'aa:bb:cc:dd:ee:ff')
+      devices.delete(mac: 'AA:BB:CC:DD:EE:FF')
 
       expect(delete_stub).to have_been_requested
     end
 
-    it 'returns API response' do
-      stub_request(:post, 'http://192.168.1.1/rci/ip/hotspot/host')
-        .to_return(status: 200, body: '{}')
+    it 'returns API response array' do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .to_return(status: 200, body: '[{}]')
 
       result = devices.delete(mac: 'AA:BB:CC:DD:EE:FF')
 
-      expect(result).to eq({})
+      expect(result).to eq([{}])
     end
   end
 end

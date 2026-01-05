@@ -4,6 +4,8 @@ import './Sidebar.css';
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '◈' },
   { to: '/devices', label: 'Devices', icon: '◉' },
+  { to: '/interfaces', label: 'Interfaces', icon: '⬡' },
+  { to: '/policies', label: 'Policies', icon: '⬢' },
   { to: '/system', label: 'System', icon: '◎' },
 ];
 

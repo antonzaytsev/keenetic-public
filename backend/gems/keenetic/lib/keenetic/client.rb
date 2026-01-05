@@ -38,6 +38,10 @@ module Keenetic
       @ports ||= Resources::Ports.new(self)
     end
 
+    def policies
+      @policies ||= Resources::Policies.new(self)
+    end
+
     def get(path, params = {})
       request(:get, path, params: params)
     end
