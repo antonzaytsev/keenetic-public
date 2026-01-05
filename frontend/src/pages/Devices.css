@@ -27,6 +27,24 @@
   overflow: hidden;
 }
 
+/* Status dot column */
+.devices-table-card .table__th:first-child,
+.devices-table-card .table__td:first-child {
+  padding-right: 0;
+}
+
+.device-status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.device-status-dot--online {
+  background: var(--accent-success);
+}
+
 /* Device name */
 .device-name__value {
   font-weight: 500;
@@ -57,6 +75,18 @@
 
 .mono-text--muted {
   color: var(--text-secondary);
+}
+
+/* Device IP with static indicator */
+.device-ip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.device-ip__pin {
+  color: var(--accent-warning);
+  flex-shrink: 0;
 }
 
 /* Device policy */

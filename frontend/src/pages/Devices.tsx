@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
-import { Card, Table, StatusBadge, Badge, Input, Toggle, type Column } from '../components/ui';
+import { Card, Table, Badge, Input, Toggle, type Column } from '../components/ui';
 import { useDevices, usePolicies, useMeshMembers } from '../hooks';
 import type { Device } from '../api';
 import './Devices.css';
@@ -30,7 +30,7 @@ export function Devices() {
   const { data, isLoading, error } = useDevices();
   const { data: policiesData } = usePolicies();
   const { data: meshData } = useMeshMembers();
-  
+
   const [filter, setFilter] = useState('');
   const [showOnlyActive, setShowOnlyActive] = useState(false);
 
@@ -62,7 +62,7 @@ export function Devices() {
   const filteredDevices = (data?.devices.filter((device) => {
     if (showOnlyActive && !device.active) return false;
     if (!filter) return true;
-    
+
     const search = filter.toLowerCase();
     return (
       device.name?.toLowerCase().includes(search) ||
@@ -82,9 +82,11 @@ export function Devices() {
   const columns: Column<Device>[] = [
     {
       key: 'status',
-      header: 'Status',
-      width: '100px',
-      render: (device) => <StatusBadge active={device.active} />,
+      header: '',
+      width: '10px',
+      render: (device) => (
+        <span className={`device-status-dot ${device.active ? 'device-status-dot--online' : ''}`} />
+      ),
     },
     {
       key: 'name',
@@ -99,7 +101,14 @@ export function Devices() {
       key: 'ip',
       header: 'IP Address',
       render: (device) => (
-        <span className="mono-text">{device.ip || '-'}</span>
+        <span className="device-ip">
+          <span className="mono-text">{device.ip || '-'}</span>
+          {device.static_ip && (
+            <svg className="device-ip__pin" viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+              <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+            </svg>
+          )}
+        </span>
       ),
     },
     {
@@ -172,8 +181,8 @@ export function Devices() {
 
   return (
     <div className="devices-page">
-      <Header 
-        title="Devices" 
+      <Header
+        title="Devices"
         subtitle={`${data?.count ?? 0} devices registered`}
       />
 
@@ -213,4 +222,3 @@ export function Devices() {
     </div>
   );
 }
-
