@@ -8,6 +8,7 @@ gem 'puma'
 gem 'rack-cors'
 gem 'typhoeus'
 gem 'logger'
+gem 'pry'
 
 group :development, :test do
   gem 'rspec'

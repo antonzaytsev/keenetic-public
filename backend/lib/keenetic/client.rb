@@ -155,11 +155,11 @@ module Keenetic
       }).run
 
       if challenge_response.timed_out?
-        raise TimeoutError, "Authentication request timed out"
+        raise TimeoutError, auth_error_context("Authentication timed out after #{config.timeout}s")
       end
 
       if challenge_response.code == 0
-        raise ConnectionError, "Connection failed: #{challenge_response.return_message}"
+        raise ConnectionError, auth_error_context("Connection failed: #{challenge_response.return_message}")
       end
 
       parse_cookies(challenge_response)
@@ -172,7 +172,7 @@ module Keenetic
       end
 
       unless challenge_response.code == 401
-        raise AuthenticationError, "Unexpected response during auth: #{challenge_response.code}"
+        raise AuthenticationError, auth_error_context("Unexpected response: HTTP #{challenge_response.code}")
       end
 
       headers = challenge_response.headers || {}
@@ -180,7 +180,7 @@ module Keenetic
       realm = headers['X-NDM-Realm']
 
       unless challenge && realm
-        raise AuthenticationError, "Missing authentication challenge headers"
+        raise AuthenticationError, auth_error_context("Missing challenge headers from router")
       end
 
       config.logger.debug { "Keenetic: Got challenge, realm=#{realm}" }
@@ -206,8 +206,19 @@ module Keenetic
         config.logger.info { "Keenetic: Authentication successful" }
         true
       else
-        raise AuthenticationError, "Authentication failed with status #{auth_response.code}"
+        raise AuthenticationError, auth_error_context("Authentication failed: HTTP #{auth_response.code}")
       end
+    end
+
+    def auth_error_context(message)
+      details = [
+        message,
+        "host=#{config.host}",
+        "login=#{config.login}",
+        "timeout=#{config.timeout}s",
+        "connect_timeout=#{config.open_timeout}s"
+      ]
+      details.join(' | ')
     end
   end
 end

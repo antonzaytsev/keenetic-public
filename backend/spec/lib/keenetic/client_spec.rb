@@ -76,13 +76,13 @@ RSpec.describe Keenetic::Client do
     end
 
     context 'when challenge headers are missing' do
-      it 'raises AuthenticationError' do
+      it 'raises AuthenticationError with context' do
         stub_request(:get, 'http://192.168.1.1/auth')
           .to_return(status: 401, headers: {})
 
         expect { client.authenticate! }.to raise_error(
           Keenetic::AuthenticationError,
-          'Missing authentication challenge headers'
+          /Missing challenge headers.*host=192\.168\.1\.1.*login=admin/
         )
       end
     end

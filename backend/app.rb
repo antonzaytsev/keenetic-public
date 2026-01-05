@@ -2,6 +2,13 @@ require 'roda'
 require 'json'
 require_relative 'lib/keenetic'
 
+# Configure Keenetic library with environment variables
+Keenetic.configure do |config|
+  config.host = ENV.fetch('KEENETIC_HOST', '192.168.1.1')
+  config.login = ENV.fetch('KEENETIC_LOGIN', 'admin')
+  config.password = ENV.fetch('KEENETIC_PASSWORD', '')
+end
+
 class App < Roda
   plugin :json
   plugin :json_parser

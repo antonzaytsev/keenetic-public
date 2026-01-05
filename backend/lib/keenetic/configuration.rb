@@ -5,9 +5,9 @@ module Keenetic
     attr_accessor :host, :login, :password, :timeout, :open_timeout, :logger
 
     def initialize
-      @host = ENV.fetch('KEENETIC_HOST', '192.168.1.1')
-      @login = ENV.fetch('KEENETIC_LOGIN', 'admin')
-      @password = ENV.fetch('KEENETIC_PASSWORD', '')
+      @host = nil
+      @login = nil
+      @password = nil
       @timeout = 30
       @open_timeout = 10
       @logger = Logger.new(nil)

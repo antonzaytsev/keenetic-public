@@ -8,6 +8,58 @@ require_relative 'keenetic/resources/system'
 require_relative 'keenetic/resources/network'
 require_relative 'keenetic/resources/wifi'
 
+# Keenetic Router API Client
+#
+# A Ruby client for interacting with Keenetic router's REST API.
+# Supports authentication, device management, system monitoring, and network interfaces.
+#
+# == Configuration
+#
+#   Keenetic.configure do |config|
+#     config.host = '192.168.1.1'
+#     config.login = 'admin'
+#     config.password = 'your_password'
+#     config.timeout = 30          # optional, default: 30
+#     config.logger = Logger.new($stdout)  # optional
+#   end
+#
+# == Usage
+#
+#   client = Keenetic.client
+#
+#   # Devices
+#   client.devices.all                    # List all devices
+#   client.devices.active                 # Only connected devices
+#   client.devices.find(mac: 'AA:BB:...')  # Find by MAC
+#   client.devices.update(mac: 'AA:BB:...', name: 'My Phone')
+#
+#   # System
+#   client.system.resources   # CPU, memory, uptime
+#   client.system.info        # Model, firmware version
+#
+#   # Network
+#   client.network.interfaces  # All network interfaces
+#
+#   # WiFi
+#   client.wifi.access_points  # WiFi networks
+#   client.wifi.clients        # Connected WiFi clients
+#
+# == Error Handling
+#
+#   begin
+#     client.devices.all
+#   rescue Keenetic::AuthenticationError => e
+#     # Invalid credentials
+#   rescue Keenetic::ConnectionError => e
+#     # Router unreachable
+#   rescue Keenetic::TimeoutError => e
+#     # Request timed out
+#   rescue Keenetic::NotFoundError => e
+#     # Resource not found
+#   rescue Keenetic::ApiError => e
+#     # Other API errors (e.status_code, e.response_body)
+#   end
+#
 module Keenetic
   class << self
     attr_writer :configuration

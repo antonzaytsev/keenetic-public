@@ -1,8 +1,4 @@
 ENV['RACK_ENV'] = 'test'
-# Clear Keenetic env vars to ensure test defaults are used
-ENV.delete('KEENETIC_HOST')
-ENV.delete('KEENETIC_LOGIN')
-ENV.delete('KEENETIC_PASSWORD')
 
 require 'webmock/rspec'
 require 'rack/test'

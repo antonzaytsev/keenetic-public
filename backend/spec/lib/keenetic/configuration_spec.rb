@@ -4,22 +4,22 @@ RSpec.describe Keenetic::Configuration do
   subject(:config) { described_class.new }
 
   describe '#initialize' do
-    it 'sets default values' do
-      expect(config.host).to eq('192.168.1.1')
-      expect(config.login).to eq('admin')
+    it 'sets nil defaults for credentials' do
+      new_config = described_class.new
+      expect(new_config.host).to be_nil
+      expect(new_config.login).to be_nil
+      expect(new_config.password).to be_nil
+    end
+
+    it 'sets default values for timeouts' do
       expect(config.timeout).to eq(30)
       expect(config.open_timeout).to eq(10)
     end
 
-    it 'reads from environment variables' do
-      allow(ENV).to receive(:fetch).with('KEENETIC_HOST', '192.168.1.1').and_return('10.0.0.1')
-      allow(ENV).to receive(:fetch).with('KEENETIC_LOGIN', 'admin').and_return('user')
-      allow(ENV).to receive(:fetch).with('KEENETIC_PASSWORD', '').and_return('secret')
-
+    it 'does not read from environment variables' do
+      # Library should be environment-agnostic
       new_config = described_class.new
-      expect(new_config.host).to eq('10.0.0.1')
-      expect(new_config.login).to eq('user')
-      expect(new_config.password).to eq('secret')
+      expect(new_config.host).to be_nil
     end
   end
 
@@ -96,7 +96,7 @@ RSpec.describe Keenetic do
       Keenetic.configure { |c| c.host = '10.0.0.1' }
       Keenetic.reset_configuration!
 
-      expect(Keenetic.configuration.host).to eq('192.168.1.1')
+      expect(Keenetic.configuration.host).to be_nil
     end
   end
 end
