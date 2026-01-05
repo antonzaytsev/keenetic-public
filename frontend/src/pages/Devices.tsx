@@ -26,7 +26,7 @@ export function Devices() {
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
-  const filteredDevices = data?.devices.filter((device) => {
+  const filteredDevices = (data?.devices.filter((device) => {
     if (showOnlyActive && !device.active) return false;
     if (!filter) return true;
     
@@ -37,7 +37,14 @@ export function Devices() {
       device.ip?.toLowerCase().includes(search) ||
       device.mac.toLowerCase().includes(search)
     );
-  }) ?? [];
+  }) ?? []).sort((a, b) => {
+    // First sort by active status (online first)
+    if (a.active !== b.active) return a.active ? -1 : 1;
+    // Then sort by name
+    const nameA = (a.name || a.hostname || '').toLowerCase();
+    const nameB = (b.name || b.hostname || '').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 
   const startEditing = useCallback((device: Device) => {
     setEditingDevice(device.mac);
