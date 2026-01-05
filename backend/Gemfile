@@ -2,11 +2,12 @@ source 'https://rubygems.org'
 
 ruby '~> 4.0'
 
+gem 'keenetic', path: 'gems/keenetic'
+
 gem 'rackup'
 gem 'roda'
 gem 'puma'
 gem 'rack-cors'
-gem 'typhoeus'
 gem 'logger'
 gem 'pry'
 

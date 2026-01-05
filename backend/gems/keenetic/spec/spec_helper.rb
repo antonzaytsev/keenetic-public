@@ -1,7 +1,4 @@
-ENV['RACK_ENV'] = 'test'
-
 require 'webmock/rspec'
-require 'rack/test'
 require 'keenetic'
 
 WebMock.disable_net_connect!(allow_localhost: false)

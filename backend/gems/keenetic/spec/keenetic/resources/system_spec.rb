@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../spec_helper'
 
 RSpec.describe Keenetic::Resources::System do
   let(:client) { Keenetic::Client.new }
