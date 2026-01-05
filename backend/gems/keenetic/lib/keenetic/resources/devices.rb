@@ -234,6 +234,8 @@ module Keenetic
         # WiFi access point info - can be in mws.ap or ap field
         mws_info = host['mws']
         wifi_ap = mws_info.is_a?(Hash) ? mws_info['ap'] : host['ap']
+        # Mesh node ID (cid) identifies which mesh node the device is connected to
+        mws_cid = mws_info.is_a?(Hash) ? mws_info['cid'] : nil
 
         {
           mac: mac,
@@ -244,6 +246,7 @@ module Keenetic
           interface: host['interface'],
           via: host['via'],
           wifi_ap: wifi_ap,
+          mws_cid: mws_cid,
           active: host['active'] == true || host['active'] == 'true',
           registered: host['registered'] == true || host['registered'] == 'true',
           access: host['access'],

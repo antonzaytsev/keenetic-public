@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card, Table, StatusBadge, Badge, Input, Toggle, type Column } from '../components/ui';
-import { useDevices, usePolicies } from '../hooks';
+import { useDevices, usePolicies, useMeshMembers } from '../hooks';
 import type { Device } from '../api';
 import './Devices.css';
 
@@ -18,23 +18,18 @@ function formatBytes(bytes: number | null): string {
   return `${value.toFixed(1)} ${units[i]}`;
 }
 
-function formatWifiAp(ap: string | null): string {
-  if (!ap) return '-';
-  // Map common AP patterns to friendly names
-  // WifiMaster0 = 2.4GHz on main router, WifiMaster1 = 5GHz on main router
-  // AccessPoint0 = main network, AccessPoint2 = guest, etc.
-  if (ap.includes('WifiMaster0/AccessPoint0')) return '📶 Main 2.4G';
-  if (ap.includes('WifiMaster1/AccessPoint0')) return '📶 Main 5G';
-  if (ap.includes('WifiMaster0/AccessPoint2')) return '📶 Guest 2.4G';
-  if (ap.includes('WifiMaster1/AccessPoint2')) return '📶 Guest 5G';
-  // Return shortened version for unknown patterns
-  return ap.replace('WifiMaster', 'WiFi').replace('AccessPoint', 'AP');
+function formatWifiBand(ap: string | null): string {
+  if (!ap) return '';
+  if (ap.includes('WifiMaster0')) return '2.4G';
+  if (ap.includes('WifiMaster1')) return '5G';
+  return '';
 }
 
 export function Devices() {
   const navigate = useNavigate();
   const { data, isLoading, error } = useDevices();
   const { data: policiesData } = usePolicies();
+  const { data: meshData } = useMeshMembers();
   
   const [filter, setFilter] = useState('');
   const [showOnlyActive, setShowOnlyActive] = useState(false);
@@ -47,6 +42,15 @@ export function Devices() {
     });
     return map;
   }, [policiesData?.policies]);
+
+  // Create a map of mesh node CID to node info for quick lookup
+  const meshNodeMap = useMemo(() => {
+    const map = new Map<string, { id: string; name: string | null }>();
+    meshData?.members.forEach((member) => {
+      map.set(member.id, { id: member.id, name: member.name });
+    });
+    return map;
+  }, [meshData?.members]);
 
   // Get policy for a device by MAC address
   const getDevicePolicy = useCallback((mac: string) => {
@@ -109,15 +113,33 @@ export function Devices() {
       key: 'wifi_ap',
       header: 'Connected To',
       render: (device) => {
-        // Show WiFi AP if available, otherwise show interface
+        // For WiFi devices, show mesh node name + band
+        if (device.wifi_ap && device.mws_cid) {
+          const meshNode = meshNodeMap.get(device.mws_cid);
+          const band = formatWifiBand(device.wifi_ap);
+          const nodeName = meshNode?.name || 'Unknown';
+          // Extract short name (first part before parenthesis)
+          const shortName = nodeName.split('(')[0].trim().replace(/^Keenetic\s+/i, '');
+          return (
+            <span className="device-wifi">
+              {shortName} {band && <span className="device-wifi__band">{band}</span>}
+            </span>
+          );
+        }
+        // WiFi but no mesh info - show controller
         if (device.wifi_ap) {
-          return <span className="device-wifi">{formatWifiAp(device.wifi_ap)}</span>;
+          const band = formatWifiBand(device.wifi_ap);
+          return (
+            <span className="device-wifi">
+              Router {band && <span className="device-wifi__band">{band}</span>}
+            </span>
+          );
         }
         // Fallback to interface for wired devices
         const iface = device.interface;
         if (!iface) return '-';
         const ifaceName = typeof iface === 'string' ? iface : (iface.name || iface.id || '-');
-        return <span className="device-wired">🔌 {ifaceName}</span>;
+        return <span className="device-wired">{ifaceName}</span>;
       },
     },
     {

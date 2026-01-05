@@ -14,6 +14,7 @@ export interface Device {
   interface: string | DeviceInterface | null;
   via: string | null;
   wifi_ap: string | null;
+  mws_cid: string | null;
   active: boolean;
   registered: boolean;
   access: string | null;
