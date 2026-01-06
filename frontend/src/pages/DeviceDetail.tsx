@@ -286,60 +286,63 @@ export function DeviceDetail() {
           </div>
         </Card>
 
-        {/* Traffic Statistics */}
-        <Card title="Traffic Statistics" className="detail-card">
-          <div className="traffic-stats">
-            <div className="traffic-stat traffic-stat--down">
-              <span className="traffic-stat__icon">↓</span>
-              <div className="traffic-stat__info">
-                <span className="traffic-stat__label">Downloaded</span>
-                <span className="traffic-stat__value">{formatBytes(device.rxbytes)}</span>
-              </div>
-            </div>
-            <div className="traffic-stat traffic-stat--up">
-              <span className="traffic-stat__icon">↑</span>
-              <div className="traffic-stat__info">
-                <span className="traffic-stat__label">Uploaded</span>
-                <span className="traffic-stat__value">{formatBytes(device.txbytes)}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Connection Info */}
-        <Card title="Connection Info" className="detail-card detail-card--wide">
-          <div className="info-list">
-            <InfoRow label="Status" value={device.active ? 'Online' : 'Offline'} highlight />
-            <InfoRow label="Connection Type" value={formatLinkType(device.link)} />
-            <InfoRow label="Session Uptime" value={formatUptime(device.uptime)} />
-            <InfoRow label="First Seen" value={formatDateTime(device.first_seen)} />
-            <InfoRow label="Last Seen" value={formatDateTime(device.last_seen)} />
-            {device.mws_cid && (
-              <InfoRow label="Mesh Node" value={getMeshNodeName(device.mws_cid)} />
-            )}
-          </div>
-        </Card>
-
-        {/* Wi-Fi Signal - Only show for Wi-Fi devices with signal data */}
-        {device.rssi !== null && (
-          <Card title="Wi-Fi Signal" className="detail-card">
-            <div className="wifi-signal">
-              <div className={`wifi-signal__indicator wifi-signal__indicator--${formatRssi(device.rssi).level}`}>
-                <div className="wifi-signal__bars">
-                  <span className="wifi-signal__bar" />
-                  <span className="wifi-signal__bar" />
-                  <span className="wifi-signal__bar" />
-                  <span className="wifi-signal__bar" />
+        {/* Stats Row: Traffic, Connection Info, Wi-Fi Signal */}
+        <div className="device-stats-row">
+          {/* Traffic Statistics */}
+          <Card title="Traffic Statistics" className="detail-card">
+            <div className="traffic-stats">
+              <div className="traffic-stat traffic-stat--down">
+                <span className="traffic-stat__icon">↓</span>
+                <div className="traffic-stat__info">
+                  <span className="traffic-stat__label">Downloaded</span>
+                  <span className="traffic-stat__value">{formatBytes(device.rxbytes)}</span>
                 </div>
-                <span className="wifi-signal__value">{formatRssi(device.rssi).text}</span>
               </div>
-              <div className="info-list">
-                <InfoRow label="Signal Quality" value={formatRssi(device.rssi).level.charAt(0).toUpperCase() + formatRssi(device.rssi).level.slice(1)} />
-                <InfoRow label="Wi-Fi Standard" value={formatWifiMode(device)} />
+              <div className="traffic-stat traffic-stat--up">
+                <span className="traffic-stat__icon">↑</span>
+                <div className="traffic-stat__info">
+                  <span className="traffic-stat__label">Uploaded</span>
+                  <span className="traffic-stat__value">{formatBytes(device.txbytes)}</span>
+                </div>
               </div>
             </div>
           </Card>
-        )}
+
+          {/* Connection Info */}
+          <Card title="Connection Info" className="detail-card">
+            <div className="info-list">
+              <InfoRow label="Status" value={device.active ? 'Online' : 'Offline'} highlight />
+              <InfoRow label="Connection Type" value={formatLinkType(device.link)} />
+              <InfoRow label="Session Uptime" value={formatUptime(device.uptime)} />
+              <InfoRow label="First Seen" value={formatDateTime(device.first_seen)} />
+              <InfoRow label="Last Seen" value={formatDateTime(device.last_seen)} />
+              {device.mws_cid && (
+                <InfoRow label="Mesh Node" value={getMeshNodeName(device.mws_cid)} />
+              )}
+            </div>
+          </Card>
+
+          {/* Wi-Fi Signal - Only show for Wi-Fi devices with signal data */}
+          {device.rssi !== null && (
+            <Card title="Wi-Fi Signal" className="detail-card">
+              <div className="wifi-signal">
+                <div className={`wifi-signal__indicator wifi-signal__indicator--${formatRssi(device.rssi).level}`}>
+                  <div className="wifi-signal__bars">
+                    <span className="wifi-signal__bar" />
+                    <span className="wifi-signal__bar" />
+                    <span className="wifi-signal__bar" />
+                    <span className="wifi-signal__bar" />
+                  </div>
+                  <span className="wifi-signal__value">{formatRssi(device.rssi).text}</span>
+                </div>
+                <div className="info-list">
+                  <InfoRow label="Signal Quality" value={formatRssi(device.rssi).level.charAt(0).toUpperCase() + formatRssi(device.rssi).level.slice(1)} />
+                  <InfoRow label="Wi-Fi Standard" value={formatWifiMode(device)} />
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

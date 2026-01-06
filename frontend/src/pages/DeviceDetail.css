@@ -60,6 +60,18 @@
   grid-column: span 3;
 }
 
+/* Stats row - Traffic, Connection Info, Wi-Fi in one row */
+.device-stats-row {
+  grid-column: span 3;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.device-stats-row .detail-card {
+  min-height: auto;
+}
+
 /* Info list */
 .info-list {
   display: flex;
@@ -304,6 +316,11 @@
   .detail-card--wide {
     grid-column: span 2;
   }
+
+  .device-stats-row {
+    grid-column: span 2;
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -313,6 +330,11 @@
 
   .detail-card--wide {
     grid-column: span 1;
+  }
+
+  .device-stats-row {
+    grid-column: span 1;
+    grid-template-columns: 1fr;
   }
 }
 
