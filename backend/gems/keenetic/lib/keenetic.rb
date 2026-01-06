@@ -11,6 +11,7 @@ require_relative 'keenetic/resources/internet'
 require_relative 'keenetic/resources/ports'
 require_relative 'keenetic/resources/policies'
 require_relative 'keenetic/resources/dhcp'
+require_relative 'keenetic/resources/routing'
 
 # Keenetic Router API Client
 #

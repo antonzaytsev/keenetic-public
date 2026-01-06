@@ -92,6 +92,11 @@ module Keenetic
       @dhcp ||= Resources::DHCP.new(self)
     end
 
+    # @return [Resources::Routing] Routing resource
+    def routing
+      @routing ||= Resources::Routing.new(self)
+    end
+
     # Make a GET request to the router API.
     #
     # == Keenetic API
