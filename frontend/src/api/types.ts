@@ -260,6 +260,36 @@ export interface PolicyResponse {
   timestamp: string;
 }
 
+// Routing types
+export interface Route {
+  destination: string | null;
+  mask: string | null;
+  gateway: string | null;
+  interface: string | null;
+  metric: number | null;
+  flags: string | null;
+  auto: boolean | null;
+}
+
+export interface RoutesResponse {
+  routes: Route[];
+  count: number;
+  timestamp: string;
+}
+
+export interface ArpEntry {
+  ip: string | null;
+  mac: string | null;
+  interface: string | null;
+  state: string | null;
+}
+
+export interface ArpResponse {
+  arp_table: ArpEntry[];
+  count: number;
+  timestamp: string;
+}
+
 // API Error
 export interface ApiError {
   error: string;

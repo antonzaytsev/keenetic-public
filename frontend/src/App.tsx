@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/layout';
-import { Dashboard, DeviceDetail, Devices, Interfaces, Policies, System } from './pages';
+import { Dashboard, DeviceDetail, Devices, Interfaces, Policies, Routes as RoutesPage, System } from './pages';
 
 function App() {
   return (
@@ -12,6 +12,7 @@ function App() {
           <Route path="/devices/:mac" element={<DeviceDetail />} />
           <Route path="/interfaces" element={<Interfaces />} />
           <Route path="/policies" element={<Policies />} />
+          <Route path="/routes" element={<RoutesPage />} />
           <Route path="/system" element={<System />} />
         </Route>
       </Routes>

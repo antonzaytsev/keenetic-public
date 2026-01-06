@@ -34,6 +34,13 @@ const icons = {
       <path d="M9 12l2 2 4-4" />
     </svg>
   ),
+  routes: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="18" cy="18" r="3" />
+      <path d="M6 9v6c0 3 3 3 6 3h3" />
+    </svg>
+  ),
   system: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />
@@ -57,6 +64,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: icons.dashboard },
   { to: '/devices', label: 'Devices', icon: icons.devices },
   { to: '/interfaces', label: 'Interfaces', icon: icons.interfaces },
+  { to: '/routes', label: 'Routing', icon: icons.routes },
   { to: '/policies', label: 'Policies', icon: icons.policies },
   { to: '/system', label: 'System', icon: icons.system },
 ];

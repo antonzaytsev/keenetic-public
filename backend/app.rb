@@ -347,6 +347,93 @@ class App < Roda
           end
         end
       end
+
+      # Routing endpoints
+      r.on 'routing' do
+        r.is 'routes' do
+          r.get do
+            routes = keenetic_client.routing.routes
+            {
+              routes: routes,
+              count: routes.size,
+              timestamp: Time.now.iso8601
+            }
+          end
+
+          r.post do
+            params = r.params
+            destination = params['destination']
+            mask = params['mask']
+            gateway = params['gateway']
+            interface_name = params['interface']
+            metric = params['metric']
+
+            if destination.nil? || destination.empty? || mask.nil? || mask.empty?
+              response.status = 400
+              next {
+                error: 'Bad Request',
+                message: 'Both destination and mask are required',
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            if gateway.nil? && interface_name.nil?
+              response.status = 400
+              next {
+                error: 'Bad Request',
+                message: 'Either gateway or interface is required',
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            result = keenetic_client.routing.create_route(
+              destination: destination,
+              mask: mask,
+              gateway: gateway,
+              interface: interface_name,
+              metric: metric&.to_i
+            )
+            {
+              success: true,
+              result: result,
+              timestamp: Time.now.iso8601
+            }
+          end
+
+          r.delete do
+            params = r.params
+            destination = params['destination']
+            mask = params['mask']
+
+            if destination.nil? || destination.empty? || mask.nil? || mask.empty?
+              response.status = 400
+              next {
+                error: 'Bad Request',
+                message: 'Both destination and mask are required',
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            result = keenetic_client.routing.delete_route(destination: destination, mask: mask)
+            {
+              success: true,
+              result: result,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+
+        r.is 'arp' do
+          r.get do
+            arp_table = keenetic_client.routing.arp_table
+            {
+              arp_table: arp_table,
+              count: arp_table.size,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+      end
     end
   end
 end

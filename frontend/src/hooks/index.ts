@@ -4,4 +4,5 @@ export { useNetworkInterfaces, useWifiAccessPoints, useMeshMembers } from './use
 export { useInternetStatus, useInternetSpeed } from './useInternet';
 export { usePorts } from './usePorts';
 export { usePolicies, usePolicy } from './usePolicies';
+export { useRoutes, useArpTable } from './useRouting';
 
