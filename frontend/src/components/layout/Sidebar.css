@@ -15,36 +15,19 @@
 .sidebar__logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   padding: 1.25rem 1rem;
   padding-left: 1.25rem;
   border-bottom: 1px solid var(--border-color);
 }
 
-.sidebar__logo-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: var(--accent-primary);
-  filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.5));
-}
-
-.sidebar__logo-icon svg {
-  width: 28px;
-  height: 28px;
-}
-
 .sidebar__logo-text {
-  font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: rgb(0, 151, 220);
+  line-height: 1;
 }
 
 .sidebar__nav {
@@ -138,4 +121,3 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
-

@@ -1,5 +1,5 @@
-/* Import fonts - Using JetBrains Mono for code and DM Sans for display */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* Import fonts - Using JetBrains Mono for code, DM Sans for display, and Roboto for logo */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600;700&family=Roboto:wght@700&display=swap');
 
 :root {
   /* Keenetic-inspired color palette */
