@@ -12,9 +12,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={`input-wrapper ${className}`}>
         {label && <label className="input__label">{label}</label>}
-        <div className={`input__container ${error ? 'input__container--error' : ''}`}>
+        <div className="input__field-wrapper">
           {icon && <span className="input__icon">{icon}</span>}
-          <input ref={ref} className="input" {...props} />
+          <input
+            ref={ref}
+            className={`input ${icon ? 'input--with-icon' : ''} ${error ? 'input--error' : ''}`}
+            {...props}
+          />
         </div>
         {error && <span className="input__error">{error}</span>}
       </div>
@@ -23,4 +27,3 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 );
 
 Input.displayName = 'Input';
-
