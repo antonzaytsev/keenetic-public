@@ -22,12 +22,12 @@ function formatUptime(seconds: number | null): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
-  
+
   const parts = [];
   if (days > 0) parts.push(`${days}d`);
   if (hours > 0) parts.push(`${hours}h`);
   if (mins > 0) parts.push(`${mins}m`);
-  
+
   return parts.join(' ') || '< 1m';
 }
 
@@ -43,13 +43,13 @@ function formatDateTime(dateStr: string | null): string {
 
 function formatRssi(rssi: number | null): { text: string; level: 'excellent' | 'good' | 'fair' | 'weak' } {
   if (rssi === null) return { text: '-', level: 'weak' };
-  
+
   let level: 'excellent' | 'good' | 'fair' | 'weak';
   if (rssi >= -50) level = 'excellent';
   else if (rssi >= -60) level = 'good';
   else if (rssi >= -70) level = 'fair';
   else level = 'weak';
-  
+
   return { text: `${rssi} dBm`, level };
 }
 
@@ -92,10 +92,10 @@ export function DeviceDetail() {
   const handleNameEdit = useCallback(async (e: React.FocusEvent<HTMLSpanElement> | React.KeyboardEvent<HTMLSpanElement>) => {
     if ('key' in e && e.key !== 'Enter') return;
     if ('key' in e) e.preventDefault();
-    
+
     const newName = (e.target as HTMLSpanElement).textContent?.trim() || '';
     const currentName = device?.name || '';
-    
+
     if (newName !== currentName && mac) {
       await updateDevice.mutateAsync({ mac, name: newName });
       refetch();
@@ -132,16 +132,16 @@ export function DeviceDetail() {
   const handleStaticIpEdit = useCallback(async (e: React.FocusEvent<HTMLSpanElement> | React.KeyboardEvent<HTMLSpanElement>) => {
     if ('key' in e && e.key !== 'Enter') return;
     if ('key' in e) e.preventDefault();
-    
+
     const newStaticIp = (e.target as HTMLSpanElement).textContent?.trim() || '';
     const currentStaticIp = device?.static_ip || '';
-    
+
     // Validate IP format if not empty
     if (newStaticIp && !/^(\d{1,3}\.){3}\d{1,3}$/.test(newStaticIp)) {
       (e.target as HTMLSpanElement).textContent = currentStaticIp || '-';
       return;
     }
-    
+
     if (newStaticIp !== currentStaticIp && mac) {
       await updateDevice.mutateAsync({ mac, static_ip: newStaticIp });
       refetch();
@@ -202,10 +202,7 @@ export function DeviceDetail() {
         </button>
       </div>
 
-      <Header 
-        title={device.name || device.hostname || 'Unknown Device'}
-        subtitle={device.mac}
-      />
+      <Header title={device.name || device.hostname || 'Unknown Device'} />
 
       <div className="device-detail-status">
         <StatusBadge active={device.active} />
@@ -348,14 +345,14 @@ export function DeviceDetail() {
   );
 }
 
-function InfoRow({ 
-  label, 
-  value, 
+function InfoRow({
+  label,
+  value,
   mono = false,
-  highlight = false 
-}: { 
-  label: string; 
-  value: string | null; 
+  highlight = false
+}: {
+  label: string;
+  value: string | null;
   mono?: boolean;
   highlight?: boolean;
 }) {
@@ -372,4 +369,3 @@ function InfoRow({
     </div>
   );
 }
-
