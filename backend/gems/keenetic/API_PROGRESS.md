@@ -133,8 +133,9 @@ Implementation status according to [KEENETIC_API.md](./KEENETIC_API.md) specific
 
 ## 18. Logs
 
-- [ ] System Log
-- [ ] Filtered Log
+- [x] System Log (`client.logs.all`)
+- [x] Filtered Log by Level (`client.logs.by_level`)
+- [x] Device Events (connection/disconnection) (`client.logs.device_events`)
 
 ## 19. Diagnostics
 

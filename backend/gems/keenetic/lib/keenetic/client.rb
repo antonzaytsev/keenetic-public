@@ -97,6 +97,11 @@ module Keenetic
       @routing ||= Resources::Routing.new(self)
     end
 
+    # @return [Resources::Logs] System logs resource
+    def logs
+      @logs ||= Resources::Logs.new(self)
+    end
+
     # Make a GET request to the router API.
     #
     # == Keenetic API
