@@ -215,7 +215,7 @@ export function Devices() {
           <Table
             columns={columns}
             data={filteredDevices}
-            keyExtractor={(device) => device.mac}
+            keyExtractor={(device, index) => `${index}-${device.mac}`}
             loading={isLoading}
             emptyMessage="No devices match your filters"
             onRowClick={(device) => navigate(`/devices/${encodeURIComponent(device.mac)}`)}

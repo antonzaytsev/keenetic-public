@@ -79,7 +79,7 @@ export function Policies() {
           <Table
             columns={columns}
             data={data?.policies ?? []}
-            keyExtractor={(policy) => policy.id}
+            keyExtractor={(policy, index) => `${index}-${policy.id}`}
             loading={isLoading}
             emptyMessage="No routing policies configured"
           />

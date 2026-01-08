@@ -113,7 +113,7 @@ export function Interfaces() {
         <Table
           columns={columns}
           data={interfaces?.interfaces ?? []}
-          keyExtractor={(iface) => iface.id}
+          keyExtractor={(iface, index) => `${index}-${iface.id}`}
           loading={isLoading}
           emptyMessage="No interfaces found"
         />

@@ -200,7 +200,7 @@ export function System() {
           <Table
             columns={meshColumns}
             data={meshMembers}
-            keyExtractor={(node) => node.id}
+            keyExtractor={(node, index) => `${index}-${node.id}`}
           />
         ) : (
           <div className="info-empty">No mesh network configured</div>

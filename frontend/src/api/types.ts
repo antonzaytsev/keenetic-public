@@ -290,6 +290,37 @@ export interface ArpResponse {
   timestamp: string;
 }
 
+// Log types
+export interface LogEntry {
+  time: string | null;
+  level: string | null;
+  message: string | null;
+  facility: string | null;
+}
+
+export interface DeviceEvent extends LogEntry {
+  mac: string | null;
+  ip: string | null;
+  event_type: 'connected' | 'disconnected' | 'unknown';
+  interface: string | null;
+  band: string | null;
+  reason: string | null;
+  details: string | null;
+}
+
+export interface LogsResponse {
+  logs: LogEntry[];
+  count: number;
+  timestamp: string;
+}
+
+export interface DeviceEventsResponse {
+  events: DeviceEvent[];
+  count: number;
+  since_seconds: number | null;
+  timestamp: string;
+}
+
 // API Error
 export interface ApiError {
   error: string;

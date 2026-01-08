@@ -255,7 +255,7 @@ export function Routes() {
             <Table
               columns={routeColumns}
               data={routesData?.routes ?? []}
-              keyExtractor={(route) => `${route.destination}-${route.mask}-${route.gateway}-${route.interface}`}
+              keyExtractor={(route, index) => `${index}-${route.destination}-${route.mask}`}
               loading={routesLoading}
               emptyMessage="No routes found"
             />
@@ -266,7 +266,7 @@ export function Routes() {
             <Table
               columns={arpColumns}
               data={arpData?.arp_table ?? []}
-              keyExtractor={(entry) => `${entry.ip}-${entry.mac}`}
+              keyExtractor={(entry, index) => `${index}-${entry.ip}-${entry.mac}`}
               loading={arpLoading}
               emptyMessage="No ARP entries found"
             />

@@ -12,7 +12,7 @@ export interface Column<T> {
 interface TableProps<T> {
   columns: Column<T>[];
   data: T[];
-  keyExtractor: (item: T) => string;
+  keyExtractor: (item: T, index: number) => string;
   onRowClick?: (item: T) => void;
   emptyMessage?: string;
   loading?: boolean;
@@ -60,9 +60,9 @@ export function Table<T>({
               </td>
             </tr>
           ) : (
-            data.map((item) => (
+            data.map((item, index) => (
               <tr
-                key={keyExtractor(item)}
+                key={keyExtractor(item, index)}
                 className={`table__row ${onRowClick ? 'table__row--clickable' : ''}`}
                 onClick={() => onRowClick?.(item)}
               >

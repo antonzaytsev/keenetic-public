@@ -348,6 +348,54 @@ class App < Roda
         end
       end
 
+      # Logs endpoints
+      r.on 'logs' do
+        r.is do
+          # GET /api/logs - get all logs
+          r.get do
+            limit = r.params['limit']&.to_i
+            logs = if limit && limit > 0
+                     keenetic_client.logs.all(limit: limit)
+                   else
+                     keenetic_client.logs.all
+                   end
+            {
+              logs: logs,
+              count: logs.size,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+
+        r.is 'device-events' do
+          # GET /api/logs/device-events - get device connection/disconnection events
+          # Query params:
+          #   - limit: max entries to fetch from router (default: all)
+          #   - mac: filter by MAC address
+          #   - since: only events from last N seconds (default: 3600 = 1 hour)
+          r.get do
+            limit = r.params['limit']&.to_i
+            mac = r.params['mac']
+            since = r.params['since']&.to_i
+            # Default to last hour, use 0 to disable time filtering
+            since = 3600 if since.nil? || since < 0
+            since = nil if since == 0
+            
+            events = keenetic_client.logs.device_events(
+              limit: limit && limit > 0 ? limit : nil,
+              mac: mac && !mac.empty? ? mac : nil,
+              since: since
+            )
+            {
+              events: events,
+              count: events.size,
+              since_seconds: since,
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+      end
+
       # Routing endpoints
       r.on 'routing' do
         r.is 'routes' do
