@@ -26,11 +26,22 @@
 }
 
 .card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 1rem;
 }
 
 .card--padding-none .card__header {
   padding: 1.25rem 1.25rem 0;
+}
+
+.card__header-left {
+  flex: 1;
+}
+
+.card__header-action {
+  flex-shrink: 0;
 }
 
 .card__title {

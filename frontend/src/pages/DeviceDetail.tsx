@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card, StatusBadge, Badge } from '../components/ui';
-import { useDevice, useUpdateDevice, usePolicies, useMeshMembers } from '../hooks';
+import { useDevice, useUpdateDevice, usePolicies, useMeshMembers, useDeviceEvents } from '../hooks';
 import './DeviceDetail.css';
 
 function formatBytes(bytes: number | null): string {
@@ -72,15 +72,54 @@ function formatWifiMode(device: { wifi_he?: boolean | null; wifi_vht?: boolean |
   return '-';
 }
 
+function formatEventTime(timeStr: string | null): string {
+  if (!timeStr) return '-';
+  try {
+    const date = new Date(timeStr);
+    if (isNaN(date.getTime())) return timeStr;
+    
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+    const time = `${hours}:${minutes}:${seconds}`;
+    
+    if (isToday) return `Today ${time}`;
+    if (isYesterday) return `Yesterday ${time}`;
+    
+    const month = date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = date.getUTCDate();
+    return `${month} ${day}, ${time}`;
+  } catch {
+    return timeStr;
+  }
+}
+
 export function DeviceDetail() {
   const { mac } = useParams<{ mac: string }>();
   const navigate = useNavigate();
   const { data, isLoading, error, refetch } = useDevice(mac || '');
   const { data: policiesData } = usePolicies();
   const { data: meshData } = useMeshMembers();
+  const { data: eventsData, isLoading: eventsLoading } = useDeviceEvents({ mac: mac || '', since: 0 });
   const updateDevice = useUpdateDevice();
 
   const device = data?.device;
+  
+  // Get last 100 events sorted by time descending
+  const recentEvents = (eventsData?.events ?? [])
+    .slice()
+    .sort((a, b) => {
+      const timeA = a.time ? new Date(a.time).getTime() : 0;
+      const timeB = b.time ? new Date(b.time).getTime() : 0;
+      return timeB - timeA;
+    })
+    .slice(0, 100);
 
   // Resolve mesh node CID to name
   const getMeshNodeName = useCallback((cid: string | null) => {
@@ -343,6 +382,57 @@ export function DeviceDetail() {
             </Card>
           )}
         </div>
+
+        {/* Device Logs Section */}
+        <Card 
+          title="Recent Activity" 
+          className="detail-card detail-card--wide device-logs-card"
+          action={
+            <Link 
+              to={`/logs?device=${encodeURIComponent(mac || '')}&since=0`}
+              className="card-action-link"
+            >
+              View all logs →
+            </Link>
+          }
+        >
+          {eventsLoading ? (
+            <div className="device-logs-loading">
+              <div className="loading-spinner loading-spinner--sm" />
+              <span>Loading activity...</span>
+            </div>
+          ) : recentEvents.length === 0 ? (
+            <div className="device-logs-empty">
+              <span>No activity recorded for this device</span>
+            </div>
+          ) : (
+            <div className="device-logs-list">
+              {recentEvents.map((event, index) => (
+                <div 
+                  key={`${index}-${event.time}-${event.event_type}`}
+                  className={`device-log-item device-log-item--${event.event_type}`}
+                >
+                  <span className="device-log-item__indicator">
+                    {event.event_type === 'connected' ? '▲' : '▼'}
+                  </span>
+                  <span className="device-log-item__time">{formatEventTime(event.time)}</span>
+                  <span className="device-log-item__type">
+                    {event.event_type === 'connected' ? 'Connected' : 'Disconnected'}
+                  </span>
+                  {event.band && (
+                    <span className="device-log-item__band">{event.band}</span>
+                  )}
+                  {event.details && (
+                    <span className="device-log-item__details">{event.details}</span>
+                  )}
+                  {event.reason && (
+                    <span className="device-log-item__reason">{event.reason}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   );

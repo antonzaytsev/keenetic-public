@@ -75,7 +75,8 @@ export function DeviceLogs() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read filter values from URL params
-  const timeRange = Number(searchParams.get('since')) || DEFAULT_TIME_RANGE;
+  const sinceParam = searchParams.get('since');
+  const timeRange = sinceParam !== null ? Number(sinceParam) : DEFAULT_TIME_RANGE;
   const selectedDevice = searchParams.get('device') || '';
   const filter = searchParams.get('q') || '';
   const typeFilter = (searchParams.get('type') as 'all' | 'connected' | 'disconnected') || 'all';
