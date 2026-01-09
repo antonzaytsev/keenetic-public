@@ -1,6 +1,8 @@
 import type { ApiError } from './types';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_BACKEND_URL 
+  ? `${import.meta.env.VITE_BACKEND_URL}/api`
+  : '/api';
 
 class ApiClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
