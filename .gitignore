@@ -26,3 +26,9 @@ Thumbs.db
 # Logs
 *.log
 
+
+# Cursor
+/.cursor
+/node_modules
+/package.json
+/package-lock.json
