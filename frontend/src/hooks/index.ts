@@ -5,5 +5,5 @@ export { useInternetStatus, useInternetSpeed } from './useInternet';
 export { usePorts } from './usePorts';
 export { usePolicies, usePolicy } from './usePolicies';
 export { useRoutes, useArpTable } from './useRouting';
-export { useDeviceEvents } from './useLogs';
+export { useDeviceEvents, useSystemLogs } from './useLogs';
 

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api, DeviceEventsResponse } from '../api';
+import { api, DeviceEventsResponse, LogsResponse } from '../api';
 
 interface UseDeviceEventsOptions {
   mac?: string;
@@ -19,6 +19,25 @@ export function useDeviceEvents(options: UseDeviceEventsOptions = {}) {
       return api.get<DeviceEventsResponse>(`/logs/device-events${queryString ? `?${queryString}` : ''}`);
     },
     refetchInterval: 30000, // Refresh every 30 seconds
+  });
+}
+
+interface UseSystemLogsOptions {
+  limit?: number;
+}
+
+export function useSystemLogs(options: UseSystemLogsOptions = {}) {
+  const { limit } = options;
+  
+  return useQuery({
+    queryKey: ['system-logs', limit],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (limit) params.set('limit', limit.toString());
+      const queryString = params.toString();
+      return api.get<LogsResponse>(`/logs${queryString ? `?${queryString}` : ''}`);
+    },
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time feel
   });
 }
 

@@ -6,4 +6,5 @@ export { Interfaces } from './Interfaces';
 export { Policies } from './Policies';
 export { Routes } from './Routes';
 export { System } from './System';
+export { SystemLogs } from './SystemLogs';
 
