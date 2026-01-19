@@ -46,7 +46,6 @@ docker compose up
 | `KEENETIC_PASSWORD` | Router admin password | — |
 | `BACKEND_PORT` | Backend API port | `4000` |
 | `FRONTEND_PORT` | Frontend dev server port | `3000` |
-| `BACKEND_HOST` | Backend host for browser requests | `localhost` |
 | `RACK_ENV` | Ruby environment | `development` |
 
 ## API Reference

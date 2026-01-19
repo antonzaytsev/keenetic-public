@@ -19,7 +19,6 @@ Local network application that interfaces with a Keenetic router to display and 
 - [x] Set up internal network for service communication
 - [x] Port mapping: internal and external ports match, controlled by env variables
 - [x] Vite proxy uses Docker service name (`backend`) for inter-container communication
-- [x] `BACKEND_HOST` used by frontend for browser requests (default: `localhost`)
 
 **Docker Philosophy:**
 - Minimal Dockerfiles - only base image and workdir, no CMD/EXPOSE/dependency installation
@@ -325,7 +324,6 @@ KEENETIC_PASSWORD=your_password
 
 # Backend
 RACK_ENV=development
-BACKEND_HOST=localhost
 BACKEND_PORT=4000
 
 # Frontend
@@ -334,6 +332,4 @@ FRONTEND_PORT=3000
 
 **Notes:**
 - Services always bind to `0.0.0.0` inside containers (configured in Puma/Vite)
-- `BACKEND_HOST` is for browser requests from frontend (default: `localhost`)
 - `VITE_API_URL` uses Docker service name (`backend`) for proxy (inter-container)
-- `VITE_BACKEND_URL` uses `BACKEND_HOST` for direct browser requests

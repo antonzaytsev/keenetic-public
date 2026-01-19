@@ -29,8 +29,7 @@ services:
     volumes:
       - ./frontend:/app
     environment:
-      - FRONTEND_PORT=${FRONTEND_PORT:-3000}
-      - VITE_BACKEND_URL=http://${BACKEND_HOST:-localhost}:${BACKEND_PORT:-4000}
+      - VITE_BACKEND_PORT=${BACKEND_PORT:-4000}
     depends_on:
       - backend
     restart: unless-stopped

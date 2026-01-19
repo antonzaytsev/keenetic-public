@@ -1,8 +1,15 @@
 import type { ApiError } from './types';
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL 
-  ? `${import.meta.env.VITE_BACKEND_URL}/api`
-  : '/api';
+const getApiBase = () => {
+  const backendPort = import.meta.env.VITE_BACKEND_PORT;
+  if (backendPort) {
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:${backendPort}/api`;
+  }
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 class ApiClient {
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
