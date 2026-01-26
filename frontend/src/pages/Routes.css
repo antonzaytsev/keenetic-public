@@ -80,6 +80,12 @@
   color: var(--color-text-secondary);
 }
 
+/* Description/Comment */
+.route-comment {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
 /* Stats row */
 .routes-stats {
   display: flex;

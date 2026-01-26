@@ -269,6 +269,7 @@ export interface Route {
   metric: number | null;
   flags: string | null;
   auto: boolean | null;
+  comment: string | null;
 }
 
 export interface RoutesResponse {

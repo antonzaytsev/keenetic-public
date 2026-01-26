@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card, Table, type Column } from '../components/ui';
-import { useRoutes, useArpTable } from '../hooks';
+import { useRoutes, useArpTable, useNetworkInterfaces } from '../hooks';
 import type { Route, ArpEntry } from '../api';
 import './Routes.css';
 
@@ -77,6 +77,21 @@ export function Routes() {
   const activeTab = getTabFromHash(location.hash);
   const { data: routesData, isLoading: routesLoading } = useRoutes();
   const { data: arpData, isLoading: arpLoading } = useArpTable();
+  const { data: interfacesData } = useNetworkInterfaces();
+
+  // Create a lookup map for interface IDs to descriptions
+  const interfaceNames = useMemo(() => {
+    const map = new Map<string, string>();
+    if (interfacesData?.interfaces) {
+      for (const iface of interfacesData.interfaces) {
+        if (iface.id) {
+          // Use description if available, otherwise use the ID
+          map.set(iface.id, iface.description || iface.id);
+        }
+      }
+    }
+    return map;
+  }, [interfacesData]);
 
   // Set default hash on mount if none present
   useEffect(() => {
@@ -113,9 +128,12 @@ export function Routes() {
     {
       key: 'interface',
       header: 'Interface',
-      render: (route) => (
-        <span className="route-interface">{route.interface || '-'}</span>
-      ),
+      render: (route) => {
+        const interfaceName = route.interface 
+          ? interfaceNames.get(route.interface) || route.interface 
+          : '-';
+        return <span className="route-interface">{interfaceName}</span>;
+      },
     },
     {
       key: 'auto',
@@ -145,6 +163,13 @@ export function Routes() {
         route.flags ? <span className="route-flags">{route.flags}</span> : <span>-</span>
       ),
     },
+    {
+      key: 'comment',
+      header: 'Description',
+      render: (route) => (
+        <span className="route-comment">{route.comment || '-'}</span>
+      ),
+    },
   ];
 
   const arpColumns: Column<ArpEntry>[] = [
@@ -165,9 +190,12 @@ export function Routes() {
     {
       key: 'interface',
       header: 'Interface',
-      render: (entry) => (
-        <span className="route-interface">{entry.interface || '-'}</span>
-      ),
+      render: (entry) => {
+        const interfaceName = entry.interface 
+          ? interfaceNames.get(entry.interface) || entry.interface 
+          : '-';
+        return <span className="route-interface">{interfaceName}</span>;
+      },
     },
     {
       key: 'state',

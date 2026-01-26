@@ -173,7 +173,8 @@ module Keenetic
           interface: data['interface'],
           metric: data['metric'],
           flags: data['flags'],
-          auto: data['auto']
+          auto: data['auto'],
+          comment: data['comment']
         }
       end
 
