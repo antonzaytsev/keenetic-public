@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 ruby '~> 4.0'
 
-gem 'keenetic', path: 'gems/keenetic'
+gem 'keenetic', github: 'antonzaytsev/keenetic-ruby'
 
 gem 'rackup'
 gem 'roda'
