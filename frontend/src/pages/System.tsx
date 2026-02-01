@@ -1,9 +1,18 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { Header } from '../components/layout';
 import { Card, Progress, Chart, Table, Badge, type Column } from '../components/ui';
 import { useSystemInfo, useSystemResources, useMeshMembers } from '../hooks';
 import type { MeshMember } from '../api';
 import './System.css';
+
+const getApiBase = () => {
+  const backendPort = import.meta.env.VITE_BACKEND_PORT;
+  if (backendPort) {
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:${backendPort}/api`;
+  }
+  return '/api';
+};
 
 function formatUptime(seconds: number | null): string {
   if (!seconds) return 'N/A';
@@ -33,6 +42,11 @@ export function System() {
   const { data: systemInfo, isLoading: infoLoading } = useSystemInfo();
   const { data: resources } = useSystemResources();
   const { data: meshData, isLoading: meshLoading } = useMeshMembers();
+  
+  // Backup/Restore state
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'downloading' | 'uploading' | 'success' | 'error'>('idle');
+  const [backupMessage, setBackupMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getResourceData = useCallback(() => ({
     cpu: resources?.resources.cpu?.load_percent ?? 0,
@@ -40,6 +54,76 @@ export function System() {
   }), [resources]);
 
   const meshMembers = meshData?.members ?? [];
+
+  const handleDownloadConfig = async () => {
+    setBackupStatus('downloading');
+    setBackupMessage(null);
+    try {
+      const response = await fetch(`${getApiBase()}/system/config`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Download failed' }));
+        throw new Error(error.message);
+      }
+      
+      // Get filename from Content-Disposition header or generate one
+      const disposition = response.headers.get('Content-Disposition');
+      let filename = 'router-config.txt';
+      if (disposition) {
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = match[1];
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setBackupStatus('success');
+      setBackupMessage('Configuration downloaded successfully');
+      setTimeout(() => setBackupStatus('idle'), 3000);
+    } catch (err) {
+      setBackupStatus('error');
+      setBackupMessage(err instanceof Error ? err.message : 'Failed to download configuration');
+    }
+  };
+
+  const handleUploadConfig = async (file: File) => {
+    setBackupStatus('uploading');
+    setBackupMessage(null);
+    try {
+      const content = await file.text();
+      const response = await fetch(`${getApiBase()}/system/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: content,
+      });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Upload failed');
+      }
+      
+      setBackupStatus('success');
+      setBackupMessage(result.message || 'Configuration uploaded successfully');
+    } catch (err) {
+      setBackupStatus('error');
+      setBackupMessage(err instanceof Error ? err.message : 'Failed to upload configuration');
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleUploadConfig(file);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
 
   const meshColumns: Column<MeshMember>[] = [
     {
@@ -145,6 +229,52 @@ export function System() {
           ) : (
             <div className="info-empty">No information available</div>
           )}
+        </Card>
+
+        <Card title="Backup & Restore" className="backup-card">
+          <div className="backup-content">
+            <p className="backup-description">
+              Download the router configuration for backup or restore from a previous backup.
+            </p>
+            <div className="backup-actions">
+              <button 
+                className="backup-btn backup-btn--download"
+                onClick={handleDownloadConfig}
+                disabled={backupStatus === 'downloading' || backupStatus === 'uploading'}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                {backupStatus === 'downloading' ? 'Downloading...' : 'Download Config'}
+              </button>
+              <button 
+                className="backup-btn backup-btn--upload"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={backupStatus === 'downloading' || backupStatus === 'uploading'}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                {backupStatus === 'uploading' ? 'Uploading...' : 'Restore Config'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.conf"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+            </div>
+            {backupMessage && (
+              <div className={`backup-message backup-message--${backupStatus}`}>
+                {backupMessage}
+              </div>
+            )}
+          </div>
         </Card>
 
         <Card title="Resource Usage" className="resource-card">
