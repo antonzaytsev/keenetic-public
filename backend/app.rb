@@ -1,7 +1,7 @@
 require 'roda'
 require 'json'
 require 'uri'
-require_relative 'gems/keenetic/lib/keenetic'
+require 'keenetic'
 
 # Configure Keenetic library with environment variables
 Keenetic.configure do |config|
@@ -23,18 +23,76 @@ class App < Roda
   end
 
   error do |e|
+    # Log the error with full backtrace
+    warn "[ERROR] #{e.class}: #{e.message}"
+    warn e.backtrace.first(10).join("\n") if e.backtrace
+
     response.status = case e
     when Keenetic::NotFoundError then 404
     when Keenetic::AuthenticationError then 401
+    when Keenetic::ConfigurationError then 500
     when Keenetic::ConnectionError, Keenetic::TimeoutError then 503
+    when Keenetic::ApiError
+      # Use the status code from the API error if available
+      e.status_code || 502
+    when NoMethodError
+      # Likely a missing method in the gem - API not implemented
+      501
+    when ArgumentError, TypeError
+      400
     else 500
     end
 
-    { 
-      error: e.class.name.split('::').last.gsub(/Error$/, ' Error').strip,
-      message: e.message,
+    error_name = case e
+    when Keenetic::ConnectionError
+      'Router Connection Error'
+    when Keenetic::TimeoutError
+      'Router Timeout'
+    when Keenetic::AuthenticationError
+      'Authentication Failed'
+    when Keenetic::ConfigurationError
+      'Configuration Error'
+    when Keenetic::NotFoundError
+      'Not Found'
+    when Keenetic::ApiError
+      'Router API Error'
+    when NoMethodError
+      'Not Implemented'
+    else
+      e.class.name.split('::').last.gsub(/Error$/, ' Error').strip
+    end
+
+    error_message = case e
+    when Keenetic::ConnectionError
+      "Cannot connect to router at #{ENV.fetch('KEENETIC_HOST', 'unknown')}: #{e.message}"
+    when Keenetic::AuthenticationError
+      "Failed to authenticate with router. Check KEENETIC_LOGIN and KEENETIC_PASSWORD."
+    when Keenetic::ConfigurationError
+      "Keenetic gem is not properly configured: #{e.message}"
+    when Keenetic::ApiError
+      e.response_body ? "#{e.message} - #{e.response_body}" : e.message
+    else
+      e.message
+    end
+    
+    error_response = { 
+      error: error_name,
+      message: error_message,
       timestamp: Time.now.iso8601
     }
+
+    # Include extra details for ApiError
+    if e.is_a?(Keenetic::ApiError) && e.status_code
+      error_response[:router_status] = e.status_code
+    end
+
+    # Include backtrace in development for debugging
+    if ENV['RACK_ENV'] == 'development'
+      error_response[:backtrace] = e.backtrace&.first(5)
+      error_response[:exception_class] = e.class.name
+    end
+
+    error_response
   end
 
   not_found do
