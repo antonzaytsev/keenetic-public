@@ -186,6 +186,46 @@ class App < Roda
             }
           end
         end
+
+        r.is 'config' do
+          # GET /api/system/config - download full router configuration for backup
+          r.get do
+            config_text = keenetic_client.system_config.download
+            
+            # Get router info for filename
+            info = keenetic_client.system.info rescue {}
+            model = info[:device] || 'keenetic'
+            date = Time.now.strftime('%Y%m%d-%H%M%S')
+            filename = "#{model}-config-#{date}.txt"
+            
+            response['Content-Type'] = 'text/plain; charset=utf-8'
+            response['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+            
+            config_text
+          end
+
+          # POST /api/system/config - upload and restore configuration
+          r.post do
+            content = r.body.read
+            
+            if content.nil? || content.strip.empty?
+              response.status = 400
+              next {
+                error: 'Bad Request',
+                message: 'Configuration content cannot be empty',
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            keenetic_client.system_config.upload(content)
+            {
+              success: true,
+              message: 'Configuration uploaded. Reboot the router to apply changes.',
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+
       end
 
       # Network endpoints
