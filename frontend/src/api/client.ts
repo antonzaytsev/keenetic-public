@@ -52,6 +52,11 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  async delete<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
+    const url = params ? `${endpoint}?${new URLSearchParams(params)}` : endpoint;
+    return this.request<T>(url, { method: 'DELETE' });
+  }
 }
 
 export const api = new ApiClient();

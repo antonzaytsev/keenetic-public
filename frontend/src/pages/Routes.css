@@ -223,3 +223,88 @@
   overflow: hidden;
 }
 
+/* Tabs spacer for right-aligned items */
+.routes-tabs__spacer {
+  flex: 1;
+}
+
+/* Add Route Button */
+.routes-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: -1px;
+  align-self: center;
+}
+
+.routes-add-btn:hover {
+  background: var(--accent-primary-hover);
+}
+
+.routes-add-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Route Actions Column */
+.route-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+tr:hover .route-actions {
+  opacity: 1;
+}
+
+.route-actions__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--border-radius);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.route-actions__btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.route-actions__btn--edit:hover {
+  background: var(--bg-elevated);
+  color: var(--accent-primary);
+}
+
+.route-actions__btn--delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-danger);
+}
+
+/* Modal Form Error */
+.modal-form__error {
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--border-radius);
+  color: var(--accent-danger);
+  font-size: 0.875rem;
+}
