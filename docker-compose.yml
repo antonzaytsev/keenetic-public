@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    command: bundle exec rerun --background -- puma -C config/puma.rb config.ru
+    command: bin/start
     ports:
       - "${BACKEND_PORT:-4000}:${BACKEND_PORT:-4000}"
     volumes:
