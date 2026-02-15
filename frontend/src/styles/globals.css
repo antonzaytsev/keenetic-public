@@ -1,6 +1,8 @@
 /* Import fonts - Using JetBrains Mono for code, DM Sans for display, and Roboto for logo */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500;600;700&family=Roboto:wght@700&display=swap');
 
+@import './breakpoints.css';
+
 :root {
   /* Keenetic-inspired color palette */
   --bg-main: #0a0e14;
@@ -22,6 +24,13 @@
   --font-display: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
 }
 
 * {

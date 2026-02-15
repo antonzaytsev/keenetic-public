@@ -115,3 +115,31 @@
   }
 }
 
+@media (--viewport-md) {
+  .table__th {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.625rem;
+  }
+
+  .table__td {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .table__td--empty,
+  .table__td--loading {
+    padding: 1.5rem 0.75rem;
+  }
+}
+
+@media (--viewport-sm) {
+  .table__th {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .table__td {
+    padding: 0.625rem;
+    font-size: 0.75rem;
+  }
+}
+

@@ -3,6 +3,8 @@
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card:hover {
@@ -61,6 +63,55 @@
 }
 
 .card__content {
-  /* Content styles */
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (--viewport-md) {
+  .card--padding-sm {
+    padding: 0.625rem;
+  }
+
+  .card--padding-md {
+    padding: 1rem;
+  }
+
+  .card--padding-lg {
+    padding: 1.25rem;
+  }
+
+  .card__header {
+    margin-bottom: 0.75rem;
+  }
+
+  .card--padding-none .card__header {
+    padding: 1rem 1rem 0;
+  }
+
+  .card__title {
+    font-size: 0.6875rem;
+  }
+
+  .card__subtitle {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (--viewport-sm) {
+  .card--padding-sm {
+    padding: 0.5rem;
+  }
+
+  .card--padding-md {
+    padding: 0.75rem;
+  }
+
+  .card--padding-lg {
+    padding: 1rem;
+  }
+
+  .card--padding-none .card__header {
+    padding: 0.75rem 0.75rem 0;
+  }
 }
 

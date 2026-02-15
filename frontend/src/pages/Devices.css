@@ -1,5 +1,7 @@
 .devices-page {
   animation: fadeIn 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -25,6 +27,12 @@
 /* Table card */
 .devices-table-card {
   overflow: hidden;
+  min-width: 0;
+}
+
+.devices-table-card .table-container {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 /* Status dot column */
@@ -134,8 +142,7 @@
   color: var(--text-secondary);
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
+@media (--viewport-lg) {
   .devices-filters__row {
     flex-direction: column;
     align-items: stretch;
@@ -144,6 +151,66 @@
 
   .devices-filters__search {
     width: 100%;
+  }
+
+  /* Hide policy column on tablet */
+  .devices-table-card .table__th:nth-child(6),
+  .devices-table-card .table__td:nth-child(6) {
+    display: none;
+  }
+
+  .device-name__value {
+    font-size: 0.9375rem;
+  }
+
+  .mono-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media (--viewport-md) {
+  .devices-filters {
+    margin-bottom: 0.75rem;
+  }
+
+  .devices-filters__row {
+    gap: 0.75rem;
+  }
+
+  /* Hide MAC column on mobile */
+  .devices-table-card .table__th:nth-child(4),
+  .devices-table-card .table__td:nth-child(4) {
+    display: none;
+  }
+
+  .device-traffic {
+    font-size: 0.75rem;
+  }
+
+  .mono-text {
+    font-size: 0.75rem;
+  }
+
+  .device-name__value {
+    font-size: 0.875rem;
+  }
+}
+
+@media (--viewport-sm) {
+  /* Hide even more columns on small mobile */
+  .devices-table-card .table__th:nth-child(5),
+  .devices-table-card .table__td:nth-child(5),
+  .devices-table-card .table__th:nth-child(7),
+  .devices-table-card .table__td:nth-child(7) {
+    display: none;
+  }
+
+  .devices-error {
+    padding: 2rem 1rem;
+  }
+
+  .devices-error p {
+    font-size: 0.9375rem;
   }
 }
 

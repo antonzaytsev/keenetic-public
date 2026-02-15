@@ -8,11 +8,15 @@
   margin-left: 220px;
   background: var(--bg-main);
   min-height: 100vh;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .layout__content {
   padding: 2rem 2.5rem;
   max-width: 1400px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Background pattern */
@@ -33,5 +37,103 @@
 .layout__content {
   position: relative;
   z-index: 1;
+}
+
+/* Mobile Header - Hidden on desktop */
+.layout__mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 90;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 1rem;
+}
+
+.layout__menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.layout__menu-button:hover {
+  background: var(--bg-elevated);
+}
+
+.layout__mobile-logo {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: rgb(0, 151, 220);
+}
+
+/* Overlay - Hidden by default */
+.layout__overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 95;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.layout__overlay--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (--viewport-lg) {
+  .layout__content {
+    padding: 1.5rem 2rem;
+  }
+}
+
+@media (--viewport-md) {
+  .layout__mobile-header {
+    display: flex;
+  }
+
+  .layout__overlay {
+    display: block;
+  }
+
+  .layout__main {
+    margin-left: 0;
+    padding-top: 56px;
+  }
+
+  .layout__content {
+    padding: 1rem;
+  }
+
+  .layout__main::before {
+    display: none;
+  }
+}
+
+@media (--viewport-sm) {
+  .layout__content {
+    padding: 0.75rem;
+  }
 }
 

@@ -1,6 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 // SVG Icons for better visual representation
 const icons = {
   dashboard: (
@@ -75,11 +80,23 @@ const navItems = [
   { to: '/system', label: 'System', icon: icons.system },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
-    <aside className="sidebar">
-      <div className="sidebar__logo">
-        <span className="sidebar__logo-text">KEENETIC</span>
+    <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
+      <div className="sidebar__header">
+        <div className="sidebar__logo">
+          <span className="sidebar__logo-text">KEENETIC</span>
+        </div>
+        <button 
+          className="sidebar__close-button"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
 
       <nav className="sidebar__nav">

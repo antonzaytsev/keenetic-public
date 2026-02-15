@@ -2,10 +2,24 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  animation: fadeIn 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .policies-table-card {
   overflow: hidden;
+  min-width: 0;
+}
+
+.policies-table-card .table-container {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .policies-error {
@@ -66,4 +80,61 @@
   color: var(--color-primary);
 }
 
+@media (--viewport-lg) {
+  .policies-page {
+    gap: 0.75rem;
+  }
+
+  .policy-name__value {
+    font-size: 0.9375rem;
+  }
+
+  .policy-name__id {
+    font-size: 0.75rem;
+  }
+}
+
+@media (--viewport-md) {
+  /* Hide interface count column on mobile */
+  .policies-table-card .table__th:nth-child(3),
+  .policies-table-card .table__td:nth-child(3) {
+    display: none;
+  }
+
+  .policy-name__value {
+    font-size: 0.875rem;
+  }
+
+  .policy-name__id {
+    font-size: 0.75rem;
+  }
+
+  .policy-interfaces {
+    gap: 0.25rem;
+  }
+
+  .policies-error {
+    padding: 2rem 1rem;
+  }
+
+  .policies-error p {
+    font-size: 1rem;
+  }
+}
+
+@media (--viewport-sm) {
+  /* Hide devices column on small mobile */
+  .policies-table-card .table__th:nth-child(4),
+  .policies-table-card .table__td:nth-child(4) {
+    display: none;
+  }
+
+  .policy-name__value {
+    font-size: 0.8125rem;
+  }
+
+  .policy-name__id {
+    font-size: 0.6875rem;
+  }
+}
 

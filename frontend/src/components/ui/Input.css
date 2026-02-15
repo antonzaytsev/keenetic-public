@@ -64,3 +64,26 @@
   font-size: 0.75rem;
   color: var(--accent-danger);
 }
+
+@media (--viewport-md) {
+  .input {
+    padding: 0.75rem;
+    font-size: 1rem; /* Prevent iOS zoom on focus */
+    min-height: 44px;
+  }
+
+  .input--with-icon {
+    padding-left: 2.5rem;
+  }
+
+  .input__icon {
+    left: 0.875rem;
+  }
+}
+
+@media (--viewport-sm) {
+  .input {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.9375rem;
+  }
+}

@@ -1,5 +1,7 @@
 .device-detail-page {
   animation: fadeIn 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -50,6 +52,11 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
+  min-width: 0;
+}
+
+.device-detail-grid > * {
+  min-width: 0;
 }
 
 .detail-card {
@@ -307,8 +314,7 @@
   background: #4a9aee;
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
+@media (--viewport-xl) {
   .device-detail-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -323,7 +329,34 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (--viewport-lg) {
+  .device-detail-grid {
+    gap: 0.75rem;
+  }
+
+  .detail-card {
+    min-height: 160px;
+  }
+
+  .info-row__label {
+    font-size: 0.75rem;
+  }
+
+  .info-row__value {
+    font-size: 0.8125rem;
+  }
+
+  .traffic-stat__icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .traffic-stat__value {
+    font-size: 1rem;
+  }
+}
+
+@media (--viewport-md) {
   .device-detail-grid {
     grid-template-columns: 1fr;
   }
@@ -515,13 +548,13 @@
   text-align: right;
 }
 
-@media (max-width: 1200px) {
+@media (--viewport-xl) {
   .device-logs-card {
     grid-column: span 2;
   }
 }
 
-@media (max-width: 768px) {
+@media (--viewport-md) {
   .device-logs-card {
     grid-column: span 1;
   }
@@ -535,6 +568,129 @@
     margin-left: 2rem;
     margin-top: 0.25rem;
     text-align: left;
+  }
+
+  .device-detail-status {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .detail-card {
+    min-height: auto;
+  }
+
+  .device-detail-grid {
+    gap: 0.75rem;
+  }
+
+  .info-row {
+    padding: 0.5rem 0;
+  }
+
+  .info-row__label {
+    font-size: 0.75rem;
+  }
+
+  .info-row__value {
+    font-size: 0.8125rem;
+  }
+
+  .traffic-stat__icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .traffic-stat__value {
+    font-size: 1rem;
+  }
+
+  .device-logs-list {
+    max-height: 300px;
+  }
+}
+
+@media (--viewport-sm) {
+  .back-button {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .back-button__text {
+    display: none;
+  }
+
+  .device-detail-status {
+    gap: 0.375rem;
+  }
+
+  .device-detail-grid {
+    gap: 0.5rem;
+  }
+
+  .info-row__value--editable {
+    min-width: 100px;
+  }
+
+  .traffic-stats {
+    gap: 1rem;
+  }
+
+  .traffic-stat {
+    gap: 0.75rem;
+  }
+
+  .traffic-stat__icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    border-radius: 8px;
+  }
+
+  .traffic-stat__label {
+    font-size: 0.6875rem;
+  }
+
+  .traffic-stat__value {
+    font-size: 0.9375rem;
+  }
+
+  .wifi-signal__indicator {
+    padding: 0.75rem;
+  }
+
+  .wifi-signal__value {
+    font-size: 1rem;
+  }
+
+  .device-log-item {
+    padding: 0.5rem 0;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .device-log-item__time {
+    min-width: 100px;
+    font-size: 0.6875rem;
+  }
+
+  .device-log-item__type {
+    min-width: 80px;
+    font-size: 0.75rem;
+  }
+
+  .device-logs-loading,
+  .device-logs-empty {
+    padding: 1.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .device-detail-loading {
+    padding: 3rem 1.5rem;
+  }
+
+  .device-detail-error {
+    padding: 2rem 1rem;
   }
 }
 

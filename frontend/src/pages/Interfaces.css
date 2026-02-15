@@ -2,10 +2,24 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  animation: fadeIn 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .interfaces-table-card {
   overflow: hidden;
+  min-width: 0;
+}
+
+.interfaces-table-card .table-container {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 /* Interface Name Column */
@@ -40,5 +54,65 @@
 
 .interface-traffic__tx {
   color: var(--color-info);
+}
+
+/* Mono text */
+.mono-text {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.mono-text--muted {
+  color: var(--text-secondary);
+}
+
+@media (--viewport-lg) {
+  .interfaces-page {
+    gap: 0.75rem;
+  }
+
+  /* Hide uptime column on tablet */
+  .interfaces-table-card .table__th:nth-child(7),
+  .interfaces-table-card .table__td:nth-child(7) {
+    display: none;
+  }
+
+  .interface-name__id {
+    font-size: 0.875rem;
+  }
+}
+
+@media (--viewport-md) {
+  /* Hide less important columns on mobile */
+  .interfaces-table-card .table__th:nth-child(5),
+  .interfaces-table-card .table__td:nth-child(5) {
+    display: none;
+  }
+
+  .interface-name__id {
+    font-size: 0.875rem;
+  }
+
+  .interface-name__desc {
+    font-size: 0.75rem;
+  }
+
+  .interface-traffic {
+    font-size: 0.75rem;
+  }
+}
+
+@media (--viewport-sm) {
+  /* Hide even more columns on small mobile */
+  .interfaces-table-card .table__th:nth-child(3),
+  .interfaces-table-card .table__td:nth-child(3),
+  .interfaces-table-card .table__th:nth-child(6),
+  .interfaces-table-card .table__td:nth-child(6) {
+    display: none;
+  }
+
+  .interface-name__id {
+    font-size: 0.8125rem;
+  }
 }
 

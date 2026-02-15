@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .routes-table-card {
@@ -91,6 +93,11 @@
   display: flex;
   gap: var(--spacing-md);
   flex-wrap: wrap;
+  min-width: 0;
+}
+
+.routes-stats > * {
+  min-width: 0;
 }
 
 .routes-stats__card {
@@ -220,6 +227,13 @@
   border: 1px solid var(--border-color);
   border-top: none;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.routes-tab-content .table-container {
+  overflow-x: auto;
+  max-width: 100%;
   overflow: hidden;
 }
 
@@ -307,4 +321,147 @@ tr:hover .route-actions {
   border-radius: var(--border-radius);
   color: var(--accent-danger);
   font-size: 0.875rem;
+}
+
+@media (--viewport-xl) {
+  .routes-stats__card {
+    min-width: calc(25% - 0.75rem);
+  }
+}
+
+@media (--viewport-lg) {
+  .routes-stats {
+    gap: 0.75rem;
+  }
+
+  .routes-stats__card {
+    min-width: calc(50% - 0.375rem);
+    flex: 0 0 calc(50% - 0.375rem);
+  }
+
+  .routes-tabs__tab {
+    padding: 10px 16px;
+    font-size: 0.8125rem;
+  }
+
+  /* Hide less important columns on tablet */
+  .routes-tab-content .table__th:nth-child(6),
+  .routes-tab-content .table__td:nth-child(6),
+  .routes-tab-content .table__th:nth-child(7),
+  .routes-tab-content .table__td:nth-child(7) {
+    display: none;
+  }
+}
+
+@media (--viewport-md) {
+  .routes-page {
+    gap: 0.75rem;
+  }
+
+  .routes-stats {
+    gap: 0.5rem;
+  }
+
+  .routes-stats__card {
+    min-width: calc(50% - 0.25rem);
+    flex: 0 0 calc(50% - 0.25rem);
+  }
+
+  .routes-tabs {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .routes-tabs__tab {
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  .routes-tabs__tab svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .routes-tabs__spacer {
+    display: none;
+  }
+
+  .routes-add-btn {
+    width: 100%;
+    justify-content: center;
+    order: -1;
+    margin-bottom: 0.5rem;
+    border-radius: var(--border-radius);
+  }
+
+  /* Hide less important columns on mobile */
+  .routes-tab-content .table__th:nth-child(4),
+  .routes-tab-content .table__td:nth-child(4),
+  .routes-tab-content .table__th:nth-child(5),
+  .routes-tab-content .table__td:nth-child(5),
+  .routes-tab-content .table__th:nth-child(6),
+  .routes-tab-content .table__td:nth-child(6),
+  .routes-tab-content .table__th:nth-child(7),
+  .routes-tab-content .table__td:nth-child(7) {
+    display: none;
+  }
+
+  .route-destination__network {
+    font-size: 0.8125rem;
+  }
+
+  .route-gateway {
+    font-size: 0.8125rem;
+  }
+
+  .route-interface {
+    font-size: 0.8125rem;
+  }
+
+  /* Always show actions on mobile */
+  .route-actions {
+    opacity: 1;
+  }
+
+  .route-actions__btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (--viewport-sm) {
+  .routes-stats__card {
+    min-width: 100%;
+    flex: 0 0 100%;
+  }
+
+  .routes-tabs__tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .routes-add-btn {
+    font-size: 0.8125rem;
+    padding: 0.625rem 1rem;
+  }
+
+  /* Hide interface column on small mobile */
+  .routes-tab-content .table__th:nth-child(3),
+  .routes-tab-content .table__td:nth-child(3) {
+    display: none;
+  }
+
+  .route-destination__network {
+    font-size: 0.75rem;
+  }
+
+  .route-gateway {
+    font-size: 0.75rem;
+  }
+
+  .arp-state__text {
+    font-size: 0.75rem;
+  }
 }

@@ -1,5 +1,7 @@
 .system-logs-page {
   animation: fadeIn 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -137,6 +139,12 @@
 /* Table card */
 .system-logs-table-card {
   overflow: hidden;
+  min-width: 0;
+}
+
+.system-logs-table-card .table-container {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 /* Log level indicator column */
@@ -273,8 +281,7 @@
   color: var(--text-secondary);
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
+@media (--viewport-lg) {
   .system-logs-filters__row {
     flex-direction: column;
     align-items: stretch;
@@ -296,6 +303,109 @@
   .system-logs-filters__search {
     width: 100%;
     margin-left: 0;
+  }
+}
+
+@media (--viewport-md) {
+  .system-logs-filters {
+    margin-bottom: 0.75rem;
+  }
+
+  .system-logs-filters__row {
+    gap: 0.75rem;
+  }
+
+  .time-filter-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .level-filter-btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  /* Hide less important columns on mobile */
+  .system-logs-table-card .table__th:nth-child(3),
+  .system-logs-table-card .table__td:nth-child(3),
+  .system-logs-table-card .table__th:nth-child(4),
+  .system-logs-table-card .table__td:nth-child(4) {
+    display: none;
+  }
+
+  .log-time__main {
+    font-size: 0.75rem;
+  }
+
+  .log-time__relative {
+    font-size: 0.6875rem;
+  }
+
+  .log-message {
+    font-size: 0.8125rem;
+  }
+
+  .system-logs-pagination {
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  .pagination-btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8125rem;
+    min-width: 32px;
+  }
+
+  .pagination-info {
+    padding: 0 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .system-logs-error {
+    padding: 2rem 1rem;
+  }
+}
+
+@media (--viewport-sm) {
+  .system-logs-filters__row {
+    gap: 0.5rem;
+  }
+
+  .time-filter-btn {
+    font-size: 0.6875rem;
+    padding: 0.375rem;
+  }
+
+  .level-filter-btn {
+    font-size: 0.6875rem;
+    padding: 0.375rem;
+  }
+
+  .system-logs-filters__facility {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.625rem;
+  }
+
+  .log-time__main {
+    font-size: 0.6875rem;
+  }
+
+  .log-message {
+    font-size: 0.75rem;
+  }
+
+  .pagination-btn {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.75rem;
+    min-width: 28px;
+  }
+
+  .pagination-info {
+    font-size: 0.75rem;
   }
 }
 
