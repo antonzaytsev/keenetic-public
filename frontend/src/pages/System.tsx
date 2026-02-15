@@ -1,7 +1,7 @@
 import { useCallback, useState, useRef } from 'react';
 import { Header } from '../components/layout';
-import { Card, Progress, Chart, Table, Badge, type Column } from '../components/ui';
-import { useSystemInfo, useSystemResources, useMeshMembers } from '../hooks';
+import { Card, Progress, Chart, Table, Badge, Modal, type Column } from '../components/ui';
+import { useSystemInfo, useSystemResources, useMeshMembers, useRebootRouter } from '../hooks';
 import type { MeshMember } from '../api';
 import './System.css';
 
@@ -42,11 +42,58 @@ export function System() {
   const { data: systemInfo, isLoading: infoLoading } = useSystemInfo();
   const { data: resources } = useSystemResources();
   const { data: meshData, isLoading: meshLoading } = useMeshMembers();
+  const rebootMutation = useRebootRouter();
   
   // Backup/Restore state
   const [backupStatus, setBackupStatus] = useState<'idle' | 'downloading' | 'uploading' | 'success' | 'error'>('idle');
   const [backupMessage, setBackupMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Reboot state
+  const [rebootModalOpen, setRebootModalOpen] = useState(false);
+  const [rebootTarget, setRebootTarget] = useState<{ id: string; name: string } | null>(null);
+  const [rebootMessage, setRebootMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const openRebootModal = (nodeId: string, nodeName: string) => {
+    setRebootTarget({ id: nodeId, name: nodeName });
+    setRebootModalOpen(true);
+    setRebootMessage(null);
+  };
+
+  const closeRebootModal = () => {
+    setRebootModalOpen(false);
+    setRebootTarget(null);
+  };
+
+  const handleReboot = async () => {
+    if (!rebootTarget) return;
+    
+    // For now, we can only reboot the main router
+    // Mesh node reboot would require direct API access to each node
+    if (rebootTarget.id !== 'main') {
+      setRebootMessage({ 
+        type: 'error', 
+        text: 'Restarting individual mesh nodes requires direct API access. Only the main router can be restarted from here.' 
+      });
+      return;
+    }
+    
+    try {
+      await rebootMutation.mutateAsync();
+      setRebootMessage({ 
+        type: 'success', 
+        text: 'Router is rebooting. Please wait a few minutes for it to come back online.' 
+      });
+      setTimeout(() => {
+        closeRebootModal();
+      }, 2000);
+    } catch (err) {
+      setRebootMessage({ 
+        type: 'error', 
+        text: err instanceof Error ? err.message : 'Failed to reboot router' 
+      });
+    }
+  };
 
   const getResourceData = useCallback(() => ({
     cpu: resources?.resources.cpu?.load_percent ?? 0,
@@ -191,6 +238,31 @@ export function System() {
         <span className="mesh-version">{node.version || '-'}</span>
       ),
     },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: '100px',
+      align: 'center',
+      render: (node) => {
+        const isController = node.mode === 'controller';
+        const nodeKey = isController ? 'main' : node.id;
+        const nodeName = node.name || node.model || 'Node';
+        
+        return (
+          <button 
+            className="mesh-restart-btn"
+            onClick={() => openRebootModal(nodeKey, nodeName)}
+            disabled={!node.online || rebootMutation.isPending}
+            title={isController ? 'Restart controller' : 'Restart not available for extenders'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M23 4v6h-6" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+          </button>
+        );
+      },
+    },
   ];
 
   return (
@@ -216,6 +288,20 @@ export function System() {
           ) : (
             <div className="info-empty">No information available</div>
           )}
+          
+          <div className="router-actions">
+            <button 
+              className="router-restart-btn"
+              onClick={() => openRebootModal('main', systemInfo?.info?.model || 'Router')}
+              disabled={rebootMutation.isPending}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 4v6h-6" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              Restart Router
+            </button>
+          </div>
         </Card>
 
         <Card title="Firmware" className="firmware-card">
@@ -336,6 +422,53 @@ export function System() {
           <div className="info-empty">No mesh network configured</div>
         )}
       </Card>
+
+      {/* Reboot Confirmation Modal */}
+      <Modal
+        isOpen={rebootModalOpen}
+        onClose={closeRebootModal}
+        title="Restart Router"
+        size="sm"
+        footer={
+          <div className="modal-footer-buttons">
+            <button 
+              className="modal-btn modal-btn--secondary"
+              onClick={closeRebootModal}
+              disabled={rebootMutation.isPending}
+            >
+              Cancel
+            </button>
+            <button 
+              className="modal-btn modal-btn--danger"
+              onClick={handleReboot}
+              disabled={rebootMutation.isPending}
+            >
+              {rebootMutation.isPending ? 'Restarting...' : 'Restart'}
+            </button>
+          </div>
+        }
+      >
+        <div className="modal-confirm">
+          <div className="modal-confirm__icon modal-confirm__icon--warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </div>
+          <p className="modal-confirm__message">
+            Are you sure you want to restart <strong>{rebootTarget?.name}</strong>?
+          </p>
+          <p className="modal-confirm__detail">
+            The router will be unavailable for a few minutes while it restarts. All connected devices will temporarily lose internet access.
+          </p>
+          {rebootMessage && (
+            <div className={`reboot-message reboot-message--${rebootMessage.type}`}>
+              {rebootMessage.text}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

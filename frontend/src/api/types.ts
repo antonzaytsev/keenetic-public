@@ -322,6 +322,13 @@ export interface DeviceEventsResponse {
   timestamp: string;
 }
 
+// Reboot response
+export interface RebootResponse {
+  success: boolean;
+  message: string;
+  timestamp: string;
+}
+
 // API Error
 export interface ApiError {
   error: string;

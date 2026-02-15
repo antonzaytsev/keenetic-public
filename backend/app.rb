@@ -187,6 +187,18 @@ class App < Roda
           end
         end
 
+        r.is 'reboot' do
+          # POST /api/system/reboot - reboot the router
+          r.post do
+            keenetic_client.system.reboot
+            {
+              success: true,
+              message: 'Router is rebooting. Please wait a few minutes for it to come back online.',
+              timestamp: Time.now.iso8601
+            }
+          end
+        end
+
         r.is 'config' do
           # GET /api/system/config - download full router configuration for backup
           r.get do
