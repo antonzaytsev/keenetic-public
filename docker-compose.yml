@@ -19,6 +19,21 @@ services:
     stdin_open: true
     restart: unless-stopped
 
+  scheduler:
+    build:
+      context: ./scheduler
+      dockerfile: Dockerfile
+    volumes:
+      - ${BACKUP_CONFIG_DIR:-./scheduler/backups}:/app/backups
+    environment:
+      - BACKEND_URL=http://backend:${BACKEND_PORT:-4000}
+      - BACKUP_CONFIG_TIME=${BACKUP_CONFIG_TIME:-02:00}
+      - BACKUP_CONFIG_RUN_ON_START=${BACKUP_CONFIG_RUN_ON_START:-true}
+      - BACKUP_CONFIG_KEEP=${BACKUP_CONFIG_KEEP:-10}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend

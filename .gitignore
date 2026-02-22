@@ -1,6 +1,9 @@
 # Environment
 .env
 
+# Router config backups
+scheduler/backups/
+
 # Dependencies (stored in application folders)
 backend/vendor/
 frontend/node_modules/
