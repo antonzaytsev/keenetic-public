@@ -28,7 +28,7 @@ export function useCreateDomainGroup() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (params: CreateDomainGroupParams) =>
-      api.post<{ success: boolean }>('/dns-routes/domain-groups', params as Record<string, unknown>),
+      api.post<{ success: boolean }>('/dns-routes/domain-groups', params as unknown as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dns-routes', 'domain-groups'] });
     },
@@ -56,7 +56,7 @@ export function useAddDnsRoute() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (params: AddDnsRouteParams) =>
-      api.post<{ success: boolean }>('/dns-routes/routes', params as Record<string, unknown>),
+      api.post<{ success: boolean }>('/dns-routes/routes', params as unknown as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dns-routes', 'routes'] });
     },
