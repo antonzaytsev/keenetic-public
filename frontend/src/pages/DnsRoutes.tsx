@@ -55,7 +55,7 @@ export function DnsRoutes() {
   const navigate = useNavigate();
 
   const { data: groupsData, isLoading: groupsLoading } = useDomainGroups();
-  const { data: routesData, isLoading: routesLoading } = useDnsRoutes();
+  const { data: routesData } = useDnsRoutes();
   const { data: interfacesData } = useNetworkInterfaces();
 
   const createGroup = useCreateDomainGroup();
@@ -77,9 +77,7 @@ export function DnsRoutes() {
   // Map group name → its DNS route
   const groupRouteMap = useMemo(() => {
     const map = new Map<string, DnsRoute>();
-    routesData?.routes.forEach((r) => {
-      if (r.group) map.set(r.group, r);
-    });
+    routesData?.routes.forEach((r) => { if (r.group) map.set(r.group, r); });
     return map;
   }, [routesData]);
 
@@ -92,7 +90,7 @@ export function DnsRoutes() {
     return map;
   }, [interfacesData]);
 
-  // ── Group modal handlers ────────────────────────────────────────────────
+  // ── Group modal handlers ─────────────────────────────────────────────────
   const openCreateGroupModal = () => {
     setGroupForm(emptyGroupForm);
     setGroupFormError(null);
@@ -120,15 +118,10 @@ export function DnsRoutes() {
 
   const handleGroupSubmit = async () => {
     const { name, description, domainsText } = groupForm;
-    const domains = domainsText
-      .split('\n')
-      .map((d) => d.trim())
-      .filter(Boolean);
-
+    const domains = domainsText.split('\n').map((d) => d.trim()).filter(Boolean);
     if (!name.trim()) { setGroupFormError('Name is required'); return; }
     if (!description.trim()) { setGroupFormError('Description is required'); return; }
     if (domains.length === 0) { setGroupFormError('At least one domain is required'); return; }
-
     try {
       await createGroup.mutateAsync({ name: name.trim(), description: description.trim(), domains });
       closeGroupModal();
@@ -139,13 +132,16 @@ export function DnsRoutes() {
 
   const handleDeleteGroup = async (group: DomainGroup) => {
     try {
+      // also delete associated route if any
+      const route = groupRouteMap.get(group.name);
+      if (route) await deleteRoute.mutateAsync(route.index);
       await deleteGroup.mutateAsync(group.name);
     } catch (err) {
       console.error('Failed to delete group:', err);
     }
   };
 
-  // ── Route modal handlers ────────────────────────────────────────────────
+  // ── Route modal handlers ─────────────────────────────────────────────────
   const openCreateRouteModal = () => {
     setRouteForm(emptyRouteForm);
     setRouteFormError(null);
@@ -170,16 +166,8 @@ export function DnsRoutes() {
     }
   };
 
-  const handleDeleteRoute = async (route: DnsRoute) => {
-    try {
-      await deleteRoute.mutateAsync(route.index);
-    } catch (err) {
-      console.error('Failed to delete route:', err);
-    }
-  };
-
-  // ── Table columns ────────────────────────────────────────────────────────
-  const groupColumns: Column<DomainGroup>[] = [
+  // ── Unified table columns ────────────────────────────────────────────────
+  const columns: Column<DomainGroup>[] = [
     {
       key: 'name',
       header: 'Name',
@@ -188,31 +176,28 @@ export function DnsRoutes() {
           className="dns-group-link"
           onClick={() => navigate(`/dns-routes/${encodeURIComponent(group.name)}`)}
         >
-          {group.name}
-          {group.description && group.description !== group.name && (
-            <span className="dns-group-link__desc">{group.description}</span>
-          )}
+          {group.description || group.name}
         </button>
       ),
     },
     {
       key: 'domains',
-      header: 'Domain names',
-      width: '130px',
+      header: 'Domain Names',
+      width: '140px',
       align: 'right',
       render: (group) => <span className="dns-count">{group.domains.length}</span>,
     },
     {
       key: 'ipv4',
-      header: 'IPv4 addresses',
-      width: '140px',
+      header: 'IPv4 Addresses',
+      width: '145px',
       align: 'right',
       render: () => <span className="dns-count">0</span>,
     },
     {
       key: 'ipv6',
-      header: 'IPv6 addresses',
-      width: '140px',
+      header: 'IPv6 Addresses',
+      width: '145px',
       align: 'right',
       render: () => <span className="dns-count">0</span>,
     },
@@ -225,6 +210,20 @@ export function DnsRoutes() {
         return (
           <span className="dns-route-interface">
             {interfaceNames.get(route.interface) || route.interface}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'auto',
+      header: 'Add Automatically',
+      width: '160px',
+      render: (group) => {
+        const route = groupRouteMap.get(group.name);
+        if (!route) return <span className="dns-no-route">—</span>;
+        return (
+          <span className={`dns-bool ${route.auto ? 'dns-bool--yes' : 'dns-bool--no'}`}>
+            {route.auto ? 'Yes' : 'No'}
           </span>
         );
       },
@@ -255,64 +254,6 @@ export function DnsRoutes() {
     },
   ];
 
-  const routeColumns: Column<DnsRoute>[] = [
-    {
-      key: 'group',
-      header: 'List name',
-      render: (route) => (
-        <button
-          className="dns-group-link"
-          onClick={() => navigate(`/dns-routes/${encodeURIComponent(route.group)}`)}
-        >
-          {route.group}
-        </button>
-      ),
-    },
-    {
-      key: 'interface',
-      header: 'Interface',
-      render: (route) => (
-        <span className="dns-route-interface">
-          {interfaceNames.get(route.interface || '') || route.interface || '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'auto',
-      header: 'Add automatically',
-      width: '160px',
-      render: (route) => (
-        <span className={`dns-bool ${route.auto ? 'dns-bool--yes' : 'dns-bool--no'}`}>
-          {route.auto ? 'Yes' : 'No'}
-        </span>
-      ),
-    },
-    {
-      key: 'comment',
-      header: 'Comment',
-      render: (route) => (
-        <span className="dns-route-comment">{route.comment || '—'}</span>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      width: '50px',
-      align: 'right',
-      render: (route) => (
-        <div className="dns-actions">
-          <button
-            className="dns-actions__btn dns-actions__btn--delete"
-            onClick={() => handleDeleteRoute(route)}
-            title="Delete route"
-          >
-            {icons.delete}
-          </button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="dns-routes-page">
       <Header
@@ -320,42 +261,27 @@ export function DnsRoutes() {
         subtitle={`${groupsData?.count ?? 0} domain groups · ${routesData?.count ?? 0} routing rules`}
       />
 
-      {/* Domain Name Lists */}
       <section className="dns-routes-section">
         <div className="dns-routes-section__header">
           <h2 className="dns-routes-section__title">Domain Name Lists</h2>
-          <button className="dns-routes-add-btn" onClick={openCreateGroupModal}>
-            {icons.plus}
-            Create group
-          </button>
+          <div className="dns-routes-section__actions">
+            <button className="dns-routes-add-btn dns-routes-add-btn--secondary" onClick={openCreateRouteModal}>
+              {icons.plus}
+              Add route
+            </button>
+            <button className="dns-routes-add-btn" onClick={openCreateGroupModal}>
+              {icons.plus}
+              Create group
+            </button>
+          </div>
         </div>
         <Card padding="none">
           <Table
-            columns={groupColumns}
+            columns={columns}
             data={groupsData?.domain_groups ?? []}
             keyExtractor={(g) => g.name}
             loading={groupsLoading}
             emptyMessage="No domain groups configured"
-          />
-        </Card>
-      </section>
-
-      {/* Routing Rules */}
-      <section className="dns-routes-section">
-        <div className="dns-routes-section__header">
-          <h2 className="dns-routes-section__title">Routing Rules</h2>
-          <button className="dns-routes-add-btn" onClick={openCreateRouteModal}>
-            {icons.plus}
-            Add route
-          </button>
-        </div>
-        <Card padding="none">
-          <Table
-            columns={routeColumns}
-            data={routesData?.routes ?? []}
-            keyExtractor={(r) => r.index}
-            loading={routesLoading}
-            emptyMessage="No routing rules configured"
           />
         </Card>
       </section>
@@ -446,7 +372,7 @@ export function DnsRoutes() {
               {groupsData?.domain_groups.map((g) => (
                 <option key={g.name} value={g.name}>
                   {g.description && g.description !== g.name
-                    ? `${g.name} (${g.description})`
+                    ? `${g.description} (${g.name})`
                     : g.name}
                 </option>
               ))}
