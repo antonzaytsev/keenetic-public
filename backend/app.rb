@@ -592,6 +592,150 @@ class App < Roda
           end
         end
       end
+
+      # DNS Routes endpoints
+      r.on 'dns-routes' do
+        r.on 'domain-groups' do
+          r.is do
+            # GET /api/dns-routes/domain-groups
+            r.get do
+              groups = keenetic_client.dns_routes.domain_groups
+              {
+                domain_groups: groups,
+                count: groups.size,
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            # POST /api/dns-routes/domain-groups - create or update group
+            r.post do
+              params = r.params
+              name = params['name']
+              description = params['description']
+              domains_raw = params['domains']
+
+              if name.nil? || name.strip.empty?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'name is required',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              if description.nil? || description.strip.empty?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'description is required',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              domains = case domains_raw
+                        when Array then domains_raw.map(&:to_s).reject(&:empty?)
+                        when String then domains_raw.split(/[\n,]+/).map(&:strip).reject(&:empty?)
+                        else []
+                        end
+
+              if domains.empty?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'at least one domain is required',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              keenetic_client.dns_routes.create_domain_group(
+                name: name,
+                description: description,
+                domains: domains
+              )
+              {
+                success: true,
+                timestamp: Time.now.iso8601
+              }
+            end
+          end
+
+          r.on String do |name_param|
+            name = URI.decode_www_form_component(name_param)
+
+            # DELETE /api/dns-routes/domain-groups/:name
+            r.delete do
+              keenetic_client.dns_routes.delete_domain_group(name: name)
+              {
+                success: true,
+                timestamp: Time.now.iso8601
+              }
+            end
+          end
+        end
+
+        r.on 'routes' do
+          r.is do
+            # GET /api/dns-routes/routes
+            r.get do
+              routes = keenetic_client.dns_routes.routes
+              {
+                routes: routes,
+                count: routes.size,
+                timestamp: Time.now.iso8601
+              }
+            end
+
+            # POST /api/dns-routes/routes
+            r.post do
+              params = r.params
+              group = params['group']
+              interface = params['interface']
+              comment = params['comment'] || ''
+
+              if group.nil? || group.strip.empty?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'group is required',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              if interface.nil? || interface.strip.empty?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'interface is required',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              keenetic_client.dns_routes.add_route(
+                group: group,
+                interface: interface,
+                comment: comment
+              )
+              {
+                success: true,
+                timestamp: Time.now.iso8601
+              }
+            end
+          end
+
+          r.on String do |index_param|
+            index = URI.decode_www_form_component(index_param)
+
+            # DELETE /api/dns-routes/routes/:index
+            r.delete do
+              keenetic_client.dns_routes.delete_route(index: index)
+              {
+                success: true,
+                timestamp: Time.now.iso8601
+              }
+            end
+          end
+        end
+      end
     end
   end
 end

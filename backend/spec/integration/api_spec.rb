@@ -192,5 +192,164 @@ RSpec.describe 'API Integration' do
       end
     end
   end
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # DNS Routes
+  # ──────────────────────────────────────────────────────────────────────────
+
+  describe 'GET /api/dns-routes/domain-groups' do
+    before do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .to_return(status: 200, body: [
+          {
+            'show' => { 'sc' => { 'object-group' => { 'fqdn' => {
+              'domain-list0' => {
+                'description' => 'YouTube',
+                'include' => [{ 'address' => 'youtube.com' }, { 'address' => 'googlevideo.com' }]
+              }
+            } } } }
+          }
+        ].to_json)
+    end
+
+    it 'returns list of domain groups' do
+      get '/api/dns-routes/domain-groups'
+
+      expect(last_response.status).to eq(200)
+      json = JSON.parse(last_response.body)
+      expect(json['count']).to eq(1)
+      group = json['domain_groups'].first
+      expect(group['name']).to eq('domain-list0')
+      expect(group['description']).to eq('YouTube')
+      expect(group['domains']).to eq(['youtube.com', 'googlevideo.com'])
+    end
+  end
+
+  describe 'POST /api/dns-routes/domain-groups' do
+    before do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .to_return(status: 200, body: [{}, {}, {}].to_json)
+    end
+
+    it 'creates a domain group' do
+      post '/api/dns-routes/domain-groups',
+           { name: 'domain-list1', description: 'Netflix', domains: ['netflix.com', 'nflxvideo.net'] }.to_json,
+           'CONTENT_TYPE' => 'application/json'
+
+      expect(last_response.status).to eq(200)
+      json = JSON.parse(last_response.body)
+      expect(json['success']).to be true
+    end
+
+    it 'returns 400 when name is missing' do
+      post '/api/dns-routes/domain-groups',
+           { description: 'Netflix', domains: ['netflix.com'] }.to_json,
+           'CONTENT_TYPE' => 'application/json'
+
+      expect(last_response.status).to eq(400)
+    end
+
+    it 'returns 400 when domains are empty' do
+      post '/api/dns-routes/domain-groups',
+           { name: 'domain-list1', description: 'Netflix', domains: [] }.to_json,
+           'CONTENT_TYPE' => 'application/json'
+
+      expect(last_response.status).to eq(400)
+    end
+  end
+
+  describe 'DELETE /api/dns-routes/domain-groups/:name' do
+    before do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .to_return(status: 200, body: [{}, {}, {}].to_json)
+    end
+
+    it 'deletes a domain group' do
+      delete '/api/dns-routes/domain-groups/domain-list0'
+
+      expect(last_response.status).to eq(200)
+      json = JSON.parse(last_response.body)
+      expect(json['success']).to be true
+    end
+  end
+
+  describe 'GET /api/dns-routes/routes' do
+    before do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .to_return(status: 200, body: [
+          {
+            'show' => { 'sc' => { 'dns-proxy' => { 'route' => [
+              {
+                'group' => 'domain-list0',
+                'interface' => 'Wireguard0',
+                'auto' => true,
+                'index' => 'abc123',
+                'comment' => ''
+              }
+            ] } } }
+          }
+        ].to_json)
+    end
+
+    it 'returns list of dns routes' do
+      get '/api/dns-routes/routes'
+
+      expect(last_response.status).to eq(200)
+      json = JSON.parse(last_response.body)
+      expect(json['count']).to eq(1)
+      route = json['routes'].first
+      expect(route['group']).to eq('domain-list0')
+      expect(route['interface']).to eq('Wireguard0')
+      expect(route['index']).to eq('abc123')
+    end
+  end
+
+  describe 'POST /api/dns-routes/routes' do
+    before do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .to_return(status: 200, body: [{}, {}, {}].to_json)
+    end
+
+    it 'creates a dns route' do
+      post '/api/dns-routes/routes',
+           { group: 'domain-list0', interface: 'Wireguard0', comment: '' }.to_json,
+           'CONTENT_TYPE' => 'application/json'
+
+      expect(last_response.status).to eq(200)
+      json = JSON.parse(last_response.body)
+      expect(json['success']).to be true
+    end
+
+    it 'returns 400 when group is missing' do
+      post '/api/dns-routes/routes',
+           { interface: 'Wireguard0' }.to_json,
+           'CONTENT_TYPE' => 'application/json'
+
+      expect(last_response.status).to eq(400)
+    end
+
+    it 'returns 400 when interface is missing' do
+      post '/api/dns-routes/routes',
+           { group: 'domain-list0' }.to_json,
+           'CONTENT_TYPE' => 'application/json'
+
+      expect(last_response.status).to eq(400)
+    end
+  end
+
+  describe 'DELETE /api/dns-routes/routes/:index' do
+    before do
+      stub_request(:post, 'http://192.168.1.1/rci/')
+        .to_return(status: 200, body: [{}, {}, {}].to_json)
+    end
+
+    it 'deletes a dns route' do
+      delete '/api/dns-routes/routes/abc123'
+
+      expect(last_response.status).to eq(200)
+      json = JSON.parse(last_response.body)
+      expect(json['success']).to be true
+    end
+  end
 end
 
