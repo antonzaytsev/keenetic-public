@@ -122,10 +122,10 @@
   color: var(--color-text-muted);
 }
 
-/* Domain action buttons */
-.dns-domains-actions {
-  display: flex;
-  gap: var(--spacing-sm);
+/* Saving indicator */
+.dns-domains-saving {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 .dns-domains-btn {
@@ -153,16 +153,6 @@
   background: var(--accent-primary-hover);
 }
 
-.dns-domains-btn--ghost {
-  background: transparent;
-  color: var(--color-text-muted);
-  border: 1px solid var(--border-color);
-}
-
-.dns-domains-btn--ghost:hover:not(:disabled) {
-  background: var(--bg-elevated);
-  color: var(--color-text-primary);
-}
 
 .dns-domains-error {
   margin: 0;

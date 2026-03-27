@@ -38,21 +38,31 @@ export function DnsRouteGroup() {
   // ── Domain editing state ─────────────────────────────────────────────────
   const [domains, setDomains] = useState<string[]>([]);
   const [addInput, setAddInput] = useState('');
-  const [domainsDirty, setDomainsDirty] = useState(false);
   const [domainsError, setDomainsError] = useState<string | null>(null);
 
-  // Sync local domain list when group data loads
+  // Sync local domain list when group data loads (not while saving)
   useEffect(() => {
-    if (group) {
+    if (group && !saveGroup.isPending) {
       setDomains(group.domains);
-      setDomainsDirty(false);
     }
   }, [group?.name, group?.domains.join(',')]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleRemoveDomain = (domain: string) => {
-    setDomains((prev) => prev.filter((d) => d !== domain));
-    setDomainsDirty(true);
+  const persistDomains = async (updated: string[]) => {
+    if (!name || !group) return;
     setDomainsError(null);
+    try {
+      await saveGroup.mutateAsync({ name, description: group.description || name, domains: updated });
+    } catch (err) {
+      // Revert optimistic update on failure
+      setDomains(group.domains);
+      setDomainsError(err instanceof Error ? err.message : 'Failed to save');
+    }
+  };
+
+  const handleRemoveDomain = (domain: string) => {
+    const updated = domains.filter((d) => d !== domain);
+    setDomains(updated);
+    persistDomains(updated);
   };
 
   const handleAddDomain = () => {
@@ -62,44 +72,17 @@ export function DnsRouteGroup() {
       setDomainsError(`"${value}" is already in the list`);
       return;
     }
-    setDomains((prev) => [...prev, value]);
+    const updated = [...domains, value];
+    setDomains(updated);
     setAddInput('');
-    setDomainsDirty(true);
     setDomainsError(null);
     addInputRef.current?.focus();
+    persistDomains(updated);
   };
 
   const handleAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') { e.preventDefault(); handleAddDomain(); }
     if (e.key === 'Escape') { setAddInput(''); setDomainsError(null); }
-  };
-
-  const handleSaveDomains = async () => {
-    if (!name || !group) return;
-    setDomainsError(null);
-    if (domains.length === 0) {
-      setDomainsError('At least one domain is required');
-      return;
-    }
-    try {
-      await saveGroup.mutateAsync({
-        name,
-        description: group.description || name,
-        domains,
-      });
-      setDomainsDirty(false);
-    } catch (err) {
-      setDomainsError(err instanceof Error ? err.message : 'Failed to save');
-    }
-  };
-
-  const handleDiscardDomains = () => {
-    if (group) {
-      setDomains(group.domains);
-      setDomainsDirty(false);
-      setDomainsError(null);
-      setAddInput('');
-    }
   };
 
   // ── Routing rule state ───────────────────────────────────────────────────
@@ -134,7 +117,6 @@ export function DnsRouteGroup() {
   };
 
   const isLoading = groupsLoading || routesLoading;
-  const isSavingDomains = saveGroup.isPending;
   const isSavingRoute = addRoute.isPending || deleteRoute.isPending;
 
   const backBtn = (
@@ -181,23 +163,8 @@ export function DnsRouteGroup() {
       <Card
         title="Domains"
         action={
-          domainsDirty ? (
-            <div className="dns-domains-actions">
-              <button
-                className="dns-domains-btn dns-domains-btn--ghost"
-                onClick={handleDiscardDomains}
-                disabled={isSavingDomains}
-              >
-                Discard
-              </button>
-              <button
-                className="dns-domains-btn dns-domains-btn--primary"
-                onClick={handleSaveDomains}
-                disabled={isSavingDomains}
-              >
-                {isSavingDomains ? 'Saving…' : 'Save'}
-              </button>
-            </div>
+          saveGroup.isPending ? (
+            <span className="dns-domains-saving">Saving…</span>
           ) : undefined
         }
       >
