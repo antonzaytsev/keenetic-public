@@ -39,17 +39,10 @@ interface GroupFormData {
   name: string;
   description: string;
   domainsText: string;
-}
-
-const emptyGroupForm: GroupFormData = { name: '', description: '', domainsText: '' };
-
-interface RouteFormData {
-  group: string;
   interface: string;
-  comment: string;
 }
 
-const emptyRouteForm: RouteFormData = { group: '', interface: '', comment: '' };
+const emptyGroupForm: GroupFormData = { name: '', description: '', domainsText: '', interface: '' };
 
 export function DnsRoutes() {
   const navigate = useNavigate();
@@ -63,16 +56,10 @@ export function DnsRoutes() {
   const addRoute = useAddDnsRoute();
   const deleteRoute = useDeleteDnsRoute();
 
-  // Group modal state
-  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<DomainGroup | null>(null);
-  const [groupForm, setGroupForm] = useState<GroupFormData>(emptyGroupForm);
-  const [groupFormError, setGroupFormError] = useState<string | null>(null);
-
-  // Route modal state
-  const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
-  const [routeForm, setRouteForm] = useState<RouteFormData>(emptyRouteForm);
-  const [routeFormError, setRouteFormError] = useState<string | null>(null);
+  const [form, setForm] = useState<GroupFormData>(emptyGroupForm);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Map group name → its DNS route
   const groupRouteMap = useMemo(() => {
@@ -90,49 +77,67 @@ export function DnsRoutes() {
     return map;
   }, [interfacesData]);
 
-  // ── Group modal handlers ─────────────────────────────────────────────────
-  const openCreateGroupModal = () => {
-    setGroupForm(emptyGroupForm);
-    setGroupFormError(null);
+  const openCreateModal = () => {
+    setForm(emptyGroupForm);
+    setFormError(null);
     setEditingGroup(null);
-    setIsGroupModalOpen(true);
+    setIsModalOpen(true);
   };
 
-  const openEditGroupModal = (group: DomainGroup) => {
-    setGroupForm({
+  const openEditModal = (group: DomainGroup) => {
+    const existingRoute = groupRouteMap.get(group.name);
+    setForm({
       name: group.name,
       description: group.description || '',
       domainsText: group.domains.join('\n'),
+      interface: existingRoute?.interface || '',
     });
-    setGroupFormError(null);
+    setFormError(null);
     setEditingGroup(group);
-    setIsGroupModalOpen(true);
+    setIsModalOpen(true);
   };
 
-  const closeGroupModal = () => {
-    setIsGroupModalOpen(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
     setEditingGroup(null);
-    setGroupForm(emptyGroupForm);
-    setGroupFormError(null);
+    setForm(emptyGroupForm);
+    setFormError(null);
   };
 
-  const handleGroupSubmit = async () => {
-    const { name, description, domainsText } = groupForm;
+  const handleSubmit = async () => {
+    const { name, description, domainsText, interface: iface } = form;
     const domains = domainsText.split('\n').map((d) => d.trim()).filter(Boolean);
-    if (!name.trim()) { setGroupFormError('Name is required'); return; }
-    if (!description.trim()) { setGroupFormError('Description is required'); return; }
-    if (domains.length === 0) { setGroupFormError('At least one domain is required'); return; }
+
+    if (!name.trim()) { setFormError('Name is required'); return; }
+    if (!description.trim()) { setFormError('Description is required'); return; }
+    if (domains.length === 0) { setFormError('At least one domain is required'); return; }
+
     try {
       await createGroup.mutateAsync({ name: name.trim(), description: description.trim(), domains });
-      closeGroupModal();
+
+      // Handle routing rule
+      const existingRoute = groupRouteMap.get(name.trim());
+      if (iface) {
+        // Create or update route: delete old first if interface changed
+        if (existingRoute && existingRoute.interface !== iface) {
+          await deleteRoute.mutateAsync(existingRoute.index);
+        }
+        if (!existingRoute || existingRoute.interface !== iface) {
+          await addRoute.mutateAsync({ group: name.trim(), interface: iface });
+        }
+      } else if (existingRoute) {
+        // Interface cleared — remove the route
+        await deleteRoute.mutateAsync(existingRoute.index);
+      }
+
+      closeModal();
     } catch (err) {
-      setGroupFormError(err instanceof Error ? err.message : 'Failed to save group');
+      setFormError(err instanceof Error ? err.message : 'Failed to save');
     }
   };
 
-  const handleDeleteGroup = async (group: DomainGroup) => {
+  const handleDelete = async (group: DomainGroup) => {
     try {
-      // also delete associated route if any
       const route = groupRouteMap.get(group.name);
       if (route) await deleteRoute.mutateAsync(route.index);
       await deleteGroup.mutateAsync(group.name);
@@ -141,40 +146,12 @@ export function DnsRoutes() {
     }
   };
 
-  // ── Route modal handlers ─────────────────────────────────────────────────
-  const openCreateRouteModal = () => {
-    setRouteForm(emptyRouteForm);
-    setRouteFormError(null);
-    setIsRouteModalOpen(true);
-  };
-
-  const closeRouteModal = () => {
-    setIsRouteModalOpen(false);
-    setRouteForm(emptyRouteForm);
-    setRouteFormError(null);
-  };
-
-  const handleRouteSubmit = async () => {
-    const { group, interface: iface, comment } = routeForm;
-    if (!group) { setRouteFormError('Domain group is required'); return; }
-    if (!iface) { setRouteFormError('Interface is required'); return; }
-    try {
-      await addRoute.mutateAsync({ group, interface: iface, comment });
-      closeRouteModal();
-    } catch (err) {
-      setRouteFormError(err instanceof Error ? err.message : 'Failed to add route');
-    }
-  };
-
-  // ── Unified table columns ────────────────────────────────────────────────
   const columns: Column<DomainGroup>[] = [
     {
       key: 'name',
       header: 'Name',
       render: (group) => (
-        <span className="dns-group-name-cell">
-          {group.description || group.name}
-        </span>
+        <span className="dns-group-name-cell">{group.description || group.name}</span>
       ),
     },
     {
@@ -234,14 +211,14 @@ export function DnsRoutes() {
         <div className="dns-actions">
           <button
             className="dns-actions__btn dns-actions__btn--edit"
-            onClick={(e) => { e.stopPropagation(); openEditGroupModal(group); }}
+            onClick={(e) => { e.stopPropagation(); openEditModal(group); }}
             title="Edit group"
           >
             {icons.edit}
           </button>
           <button
             className="dns-actions__btn dns-actions__btn--delete"
-            onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group); }}
+            onClick={(e) => { e.stopPropagation(); handleDelete(group); }}
             title="Delete group"
           >
             {icons.delete}
@@ -250,6 +227,8 @@ export function DnsRoutes() {
       ),
     },
   ];
+
+  const isSaving = createGroup.isPending || addRoute.isPending || deleteRoute.isPending;
 
   return (
     <div className="dns-routes-page">
@@ -261,16 +240,10 @@ export function DnsRoutes() {
       <section className="dns-routes-section">
         <div className="dns-routes-section__header">
           <h2 className="dns-routes-section__title">Domain Name Lists</h2>
-          <div className="dns-routes-section__actions">
-            <button className="dns-routes-add-btn dns-routes-add-btn--secondary" onClick={openCreateRouteModal}>
-              {icons.plus}
-              Add route
-            </button>
-            <button className="dns-routes-add-btn" onClick={openCreateGroupModal}>
-              {icons.plus}
-              Create group
-            </button>
-          </div>
+          <button className="dns-routes-add-btn" onClick={openCreateModal}>
+            {icons.plus}
+            Create group
+          </button>
         </div>
         <Card padding="none">
           <Table
@@ -284,22 +257,22 @@ export function DnsRoutes() {
         </Card>
       </section>
 
-      {/* Create/Edit Domain Group Modal */}
+      {/* Create / Edit Group Modal */}
       <Modal
-        isOpen={isGroupModalOpen}
-        onClose={closeGroupModal}
+        isOpen={isModalOpen}
+        onClose={closeModal}
         title={editingGroup ? 'Edit Domain Group' : 'Create Domain Group'}
         footer={
           <>
-            <button className="modal-btn modal-btn--secondary" onClick={closeGroupModal}>
+            <button className="modal-btn modal-btn--secondary" onClick={closeModal}>
               Cancel
             </button>
             <button
               className="modal-btn modal-btn--primary"
-              onClick={handleGroupSubmit}
-              disabled={createGroup.isPending}
+              onClick={handleSubmit}
+              disabled={isSaving}
             >
-              {createGroup.isPending ? 'Saving...' : 'Save'}
+              {isSaving ? 'Saving…' : 'Save'}
             </button>
           </>
         }
@@ -310,9 +283,9 @@ export function DnsRoutes() {
             <input
               className="modal-form__input"
               placeholder="e.g., youtube"
-              value={groupForm.name}
+              value={form.name}
               disabled={!!editingGroup}
-              onChange={(e) => setGroupForm((f) => ({ ...f, name: e.target.value }))}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
           <div className="modal-form__group">
@@ -320,8 +293,8 @@ export function DnsRoutes() {
             <input
               className="modal-form__input"
               placeholder="e.g., YouTube"
-              value={groupForm.description}
-              onChange={(e) => setGroupForm((f) => ({ ...f, description: e.target.value }))}
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </div>
           <div className="modal-form__group">
@@ -329,61 +302,19 @@ export function DnsRoutes() {
             <textarea
               className="modal-form__textarea"
               placeholder={'youtube.com\ngooglevideo.com\nytimg.com'}
-              value={groupForm.domainsText}
-              onChange={(e) => setGroupForm((f) => ({ ...f, domainsText: e.target.value }))}
+              value={form.domainsText}
+              onChange={(e) => setForm((f) => ({ ...f, domainsText: e.target.value }))}
             />
             <div className="modal-form__hint">One domain per line</div>
           </div>
-          {groupFormError && <div className="modal-form__error">{groupFormError}</div>}
-        </div>
-      </Modal>
-
-      {/* Add Route Modal */}
-      <Modal
-        isOpen={isRouteModalOpen}
-        onClose={closeRouteModal}
-        title="Add Routing Rule"
-        footer={
-          <>
-            <button className="modal-btn modal-btn--secondary" onClick={closeRouteModal}>
-              Cancel
-            </button>
-            <button
-              className="modal-btn modal-btn--primary"
-              onClick={handleRouteSubmit}
-              disabled={addRoute.isPending}
-            >
-              {addRoute.isPending ? 'Adding...' : 'Add'}
-            </button>
-          </>
-        }
-      >
-        <div className="modal-form">
           <div className="modal-form__group">
-            <label className="modal-form__label">Domain Group</label>
+            <label className="modal-form__label">Route via interface (optional)</label>
             <select
               className="modal-form__select"
-              value={routeForm.group}
-              onChange={(e) => setRouteForm((f) => ({ ...f, group: e.target.value }))}
+              value={form.interface}
+              onChange={(e) => setForm((f) => ({ ...f, interface: e.target.value }))}
             >
-              <option value="">Select domain group...</option>
-              {groupsData?.domain_groups.map((g) => (
-                <option key={g.name} value={g.name}>
-                  {g.description && g.description !== g.name
-                    ? `${g.description} (${g.name})`
-                    : g.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="modal-form__group">
-            <label className="modal-form__label">Interface</label>
-            <select
-              className="modal-form__select"
-              value={routeForm.interface}
-              onChange={(e) => setRouteForm((f) => ({ ...f, interface: e.target.value }))}
-            >
-              <option value="">Select interface...</option>
+              <option value="">No routing rule</option>
               {interfacesData?.interfaces.map((iface) => (
                 <option key={iface.id} value={iface.id}>
                   {iface.description || iface.id}
@@ -391,16 +322,7 @@ export function DnsRoutes() {
               ))}
             </select>
           </div>
-          <div className="modal-form__group">
-            <label className="modal-form__label">Comment (optional)</label>
-            <input
-              className="modal-form__input"
-              placeholder="e.g., Route via VPN"
-              value={routeForm.comment}
-              onChange={(e) => setRouteForm((f) => ({ ...f, comment: e.target.value }))}
-            />
-          </div>
-          {routeFormError && <div className="modal-form__error">{routeFormError}</div>}
+          {formError && <div className="modal-form__error">{formError}</div>}
         </div>
       </Modal>
     </div>
