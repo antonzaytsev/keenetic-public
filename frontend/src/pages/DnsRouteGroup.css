@@ -216,27 +216,6 @@
   border-color: var(--accent-primary);
 }
 
-.dns-group-routing__save-btn {
-  padding: 7px 16px;
-  background: var(--accent-primary);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  white-space: nowrap;
-}
-
-.dns-group-routing__save-btn:hover:not(:disabled) {
-  background: var(--accent-primary-hover);
-}
-
-.dns-group-routing__save-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 
 .dns-group-routing__error {
   padding: 8px 12px;

@@ -93,25 +93,17 @@ export function DnsRouteGroup() {
     if (route?.interface) setSelectedInterface(route.interface);
   }, [route?.interface]);
 
-  const interfaceNames = useMemo(() => {
-    const map = new Map<string, string>();
-    interfacesData?.interfaces.forEach((iface) => {
-      if (iface.id) map.set(iface.id, iface.description || iface.id);
-    });
-    return map;
-  }, [interfacesData]);
-
-  const handleSaveRoute = async () => {
-    if (!selectedInterface || !name) return;
+  const handleInterfaceChange = async (newInterface: string) => {
+    if (!name) return;
+    setSelectedInterface(newInterface);
     setRouteError(null);
     try {
       if (route) await deleteRoute.mutateAsync(route.index);
-      await addRoute.mutateAsync({
-        group: name,
-        interface: selectedInterface,
-        comment: route?.comment || '',
-      });
+      if (newInterface) {
+        await addRoute.mutateAsync({ group: name, interface: newInterface, comment: route?.comment || '' });
+      }
     } catch (err) {
+      setSelectedInterface(route?.interface || '');
       setRouteError(err instanceof Error ? err.message : 'Failed to save routing rule');
     }
   };
@@ -145,10 +137,6 @@ export function DnsRouteGroup() {
       </div>
     );
   }
-
-  const currentIfaceName = route?.interface
-    ? interfaceNames.get(route.interface) || route.interface
-    : null;
 
   return (
     <div className="dns-group-detail-page">
@@ -225,36 +213,24 @@ export function DnsRouteGroup() {
       {/* Routing Rule */}
       <Card
         title="Routing Rule"
-        subtitle={
-          route
-            ? `Traffic is routed via ${currentIfaceName}`
-            : 'No routing rule configured for this group'
-        }
+        action={isSavingRoute ? <span className="dns-domains-saving">Saving…</span> : undefined}
       >
         <div className="dns-group-routing">
           <div className="dns-group-routing__form">
-            <span className="dns-group-routing__label">
-              {route ? 'Change interface:' : 'Assign interface:'}
-            </span>
+            <span className="dns-group-routing__label">Interface:</span>
             <select
               className="dns-group-routing__select"
               value={selectedInterface}
-              onChange={(e) => { setSelectedInterface(e.target.value); setRouteError(null); }}
+              disabled={isSavingRoute}
+              onChange={(e) => handleInterfaceChange(e.target.value)}
             >
-              <option value="">Select interface...</option>
+              <option value="">No routing rule</option>
               {interfacesData?.interfaces.map((iface) => (
                 <option key={iface.id} value={iface.id}>
                   {iface.description || iface.id}
                 </option>
               ))}
             </select>
-            <button
-              className="dns-group-routing__save-btn"
-              onClick={handleSaveRoute}
-              disabled={!selectedInterface || isSavingRoute}
-            >
-              {isSavingRoute ? 'Saving…' : route ? 'Update' : 'Add Route'}
-            </button>
           </div>
           {routeError && <div className="dns-group-routing__error">{routeError}</div>}
         </div>
