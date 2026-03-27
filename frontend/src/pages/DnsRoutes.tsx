@@ -37,12 +37,11 @@ const icons = {
 
 interface GroupFormData {
   name: string;
-  description: string;
   domainsText: string;
   interface: string;
 }
 
-const emptyGroupForm: GroupFormData = { name: '', description: '', domainsText: '', interface: '' };
+const emptyGroupForm: GroupFormData = { name: '', domainsText: '', interface: '' };
 
 export function DnsRoutes() {
   const navigate = useNavigate();
@@ -87,8 +86,7 @@ export function DnsRoutes() {
   const openEditModal = (group: DomainGroup) => {
     const existingRoute = groupRouteMap.get(group.name);
     setForm({
-      name: group.name,
-      description: group.description || '',
+      name: group.description || group.name,
       domainsText: group.domains.join('\n'),
       interface: existingRoute?.interface || '',
     });
@@ -105,25 +103,28 @@ export function DnsRoutes() {
   };
 
   const handleSubmit = async () => {
-    const { name, description, domainsText, interface: iface } = form;
+    const { name, domainsText, interface: iface } = form;
     const domains = domainsText.split('\n').map((d) => d.trim()).filter(Boolean);
 
     if (!name.trim()) { setFormError('Name is required'); return; }
-    if (!description.trim()) { setFormError('Description is required'); return; }
     if (domains.length === 0) { setFormError('At least one domain is required'); return; }
 
+    // Use name as both the identifier key and human-readable description
+    const groupName = editingGroup ? editingGroup.name : name.trim();
+    const groupDesc = name.trim();
+
     try {
-      await createGroup.mutateAsync({ name: name.trim(), description: description.trim(), domains });
+      await createGroup.mutateAsync({ name: groupName, description: groupDesc, domains });
 
       // Handle routing rule
-      const existingRoute = groupRouteMap.get(name.trim());
+      const existingRoute = groupRouteMap.get(groupName);
       if (iface) {
         // Create or update route: delete old first if interface changed
         if (existingRoute && existingRoute.interface !== iface) {
           await deleteRoute.mutateAsync(existingRoute.index);
         }
         if (!existingRoute || existingRoute.interface !== iface) {
-          await addRoute.mutateAsync({ group: name.trim(), interface: iface });
+          await addRoute.mutateAsync({ group: groupName, interface: iface });
         }
       } else if (existingRoute) {
         // Interface cleared — remove the route
@@ -279,22 +280,12 @@ export function DnsRoutes() {
       >
         <div className="modal-form">
           <div className="modal-form__group">
-            <label className="modal-form__label">Name (identifier)</label>
+            <label className="modal-form__label">Name</label>
             <input
               className="modal-form__input"
               placeholder="e.g., youtube"
               value={form.name}
-              disabled={!!editingGroup}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
-          </div>
-          <div className="modal-form__group">
-            <label className="modal-form__label">Description</label>
-            <input
-              className="modal-form__input"
-              placeholder="e.g., YouTube"
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </div>
           <div className="modal-form__group">
