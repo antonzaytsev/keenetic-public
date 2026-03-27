@@ -202,14 +202,6 @@ export function DnsRouteGroup() {
         </div>
       </Card>
 
-      {/* Resolved IP Addresses */}
-      <Card title="Resolved IP Addresses">
-        <p className="dns-group-no-ips">
-          No IP addresses resolved yet. The router populates these automatically as DNS queries
-          are made for the configured domains.
-        </p>
-      </Card>
-
       {/* Routing Rule */}
       <Card
         title="Routing Rule"
