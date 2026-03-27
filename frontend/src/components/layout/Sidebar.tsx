@@ -33,6 +33,13 @@ const icons = {
       <path d="M12 11l5 6" />
     </svg>
   ),
+  dnsRoutes: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  ),
   policies: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2l8 4v6c0 5.5-3.5 10-8 12-4.5-2-8-6.5-8-12V6l8-4z" />
@@ -76,6 +83,7 @@ const navItems = [
   { to: '/system-logs', label: 'System Logs', icon: icons.systemLogs },
   { to: '/interfaces', label: 'Interfaces', icon: icons.interfaces },
   { to: '/routes', label: 'Routing', icon: icons.routes },
+  { to: '/dns-routes', label: 'DNS Routes', icon: icons.dnsRoutes },
   { to: '/policies', label: 'Policies', icon: icons.policies },
   { to: '/system', label: 'System', icon: icons.system },
 ];
