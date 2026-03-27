@@ -24,7 +24,7 @@
 .dns-routes-section__title {
   font-size: var(--font-size-lg);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -38,7 +38,8 @@
   color: white;
   border: none;
   border-radius: var(--border-radius);
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -57,7 +58,7 @@
 /* Group name cell (row is clickable, no button needed) */
 .dns-group-name-cell {
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 /* Group name link (used in route modal dropdown, route table) */
@@ -85,24 +86,24 @@
 .dns-group-link__desc {
   font-size: var(--font-size-sm);
   font-weight: 400;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 /* Count cells */
 .dns-count {
   font-family: var(--font-mono);
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
 }
 
 /* No route placeholder */
 .dns-no-route {
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 /* Interface cell */
 .dns-route-interface {
   font-weight: 500;
-  color: var(--color-info);
+  color: var(--accent-secondary);
 }
 
 /* Boolean cells */
@@ -112,17 +113,17 @@
 }
 
 .dns-bool--yes {
-  color: var(--color-success);
+  color: var(--accent-success);
 }
 
 .dns-bool--no {
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 /* Comment cell */
 .dns-route-comment {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 /* Actions column */
@@ -176,7 +177,7 @@ tr:hover .dns-actions {
   background: var(--bg-input, var(--color-surface-elevated));
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  color: var(--color-text-primary);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: var(--font-mono);
   resize: vertical;
@@ -191,7 +192,7 @@ tr:hover .dns-actions {
 
 .modal-form__hint {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
