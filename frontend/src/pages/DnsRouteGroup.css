@@ -33,26 +33,141 @@
   height: 14px;
 }
 
-/* Domains list */
-.dns-group-domains-list {
+/* Domains editor */
+.dns-domains-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dns-domains-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
-.dns-group-domains-list__item {
+.dns-domains-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 6px 0;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--color-text-primary);
   border-bottom: 1px solid var(--border-color);
 }
 
-.dns-group-domains-list__item:last-child {
+.dns-domains-list__item:last-child {
   border-bottom: none;
+}
+
+.dns-domains-list__name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.dns-domains-list__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-radius: var(--border-radius);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.dns-domains-list__item:hover .dns-domains-list__remove {
+  opacity: 1;
+}
+
+.dns-domains-list__remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-danger);
+}
+
+.dns-domains-list__remove svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Add domain row */
+.dns-domains-add {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.dns-domains-add__input {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--bg-input, var(--color-surface-elevated));
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+
+.dns-domains-add__input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.dns-domains-add__input::placeholder {
+  font-family: var(--font-sans, inherit);
+  color: var(--color-text-muted);
+}
+
+/* Domain action buttons */
+.dns-domains-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.dns-domains-btn {
+  padding: 5px 14px;
+  border-radius: var(--border-radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.dns-domains-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dns-domains-btn--primary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.dns-domains-btn--primary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+}
+
+.dns-domains-btn--ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--border-color);
+}
+
+.dns-domains-btn--ghost:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.dns-domains-error {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--accent-danger);
 }
 
 /* IP addresses empty state */

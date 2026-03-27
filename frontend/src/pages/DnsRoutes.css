@@ -69,7 +69,13 @@
   height: 14px;
 }
 
-/* Group name link */
+/* Group name cell (row is clickable, no button needed) */
+.dns-group-name-cell {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* Group name link (used in route modal dropdown, route table) */
 .dns-group-link {
   display: inline-flex;
   flex-direction: column;

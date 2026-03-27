@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card } from '../components/ui';
@@ -6,6 +6,7 @@ import {
   useDomainGroups,
   useDnsRoutes,
   useAddDnsRoute,
+  useCreateDomainGroup,
   useDeleteDnsRoute,
   useNetworkInterfaces,
 } from '../hooks';
@@ -14,6 +15,7 @@ import './DnsRouteGroup.css';
 export function DnsRouteGroup() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
+  const addInputRef = useRef<HTMLInputElement>(null);
 
   const { data: groupsData, isLoading: groupsLoading } = useDomainGroups();
   const { data: routesData, isLoading: routesLoading } = useDnsRoutes();
@@ -21,6 +23,7 @@ export function DnsRouteGroup() {
 
   const addRoute = useAddDnsRoute();
   const deleteRoute = useDeleteDnsRoute();
+  const saveGroup = useCreateDomainGroup();
 
   const group = useMemo(
     () => groupsData?.domain_groups.find((g) => g.name === name),
@@ -32,10 +35,77 @@ export function DnsRouteGroup() {
     [routesData, name],
   );
 
-  const [selectedInterface, setSelectedInterface] = useState('');
-  const [saveError, setSaveError] = useState<string | null>(null);
+  // ── Domain editing state ─────────────────────────────────────────────────
+  const [domains, setDomains] = useState<string[]>([]);
+  const [addInput, setAddInput] = useState('');
+  const [domainsDirty, setDomainsDirty] = useState(false);
+  const [domainsError, setDomainsError] = useState<string | null>(null);
 
-  // Sync selectedInterface when route data arrives
+  // Sync local domain list when group data loads
+  useEffect(() => {
+    if (group) {
+      setDomains(group.domains);
+      setDomainsDirty(false);
+    }
+  }, [group?.name, group?.domains.join(',')]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRemoveDomain = (domain: string) => {
+    setDomains((prev) => prev.filter((d) => d !== domain));
+    setDomainsDirty(true);
+    setDomainsError(null);
+  };
+
+  const handleAddDomain = () => {
+    const value = addInput.trim().toLowerCase();
+    if (!value) return;
+    if (domains.includes(value)) {
+      setDomainsError(`"${value}" is already in the list`);
+      return;
+    }
+    setDomains((prev) => [...prev, value]);
+    setAddInput('');
+    setDomainsDirty(true);
+    setDomainsError(null);
+    addInputRef.current?.focus();
+  };
+
+  const handleAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleAddDomain(); }
+    if (e.key === 'Escape') { setAddInput(''); setDomainsError(null); }
+  };
+
+  const handleSaveDomains = async () => {
+    if (!name || !group) return;
+    setDomainsError(null);
+    if (domains.length === 0) {
+      setDomainsError('At least one domain is required');
+      return;
+    }
+    try {
+      await saveGroup.mutateAsync({
+        name,
+        description: group.description || name,
+        domains,
+      });
+      setDomainsDirty(false);
+    } catch (err) {
+      setDomainsError(err instanceof Error ? err.message : 'Failed to save');
+    }
+  };
+
+  const handleDiscardDomains = () => {
+    if (group) {
+      setDomains(group.domains);
+      setDomainsDirty(false);
+      setDomainsError(null);
+      setAddInput('');
+    }
+  };
+
+  // ── Routing rule state ───────────────────────────────────────────────────
+  const [selectedInterface, setSelectedInterface] = useState('');
+  const [routeError, setRouteError] = useState<string | null>(null);
+
   useEffect(() => {
     if (route?.interface) setSelectedInterface(route.interface);
   }, [route?.interface]);
@@ -50,30 +120,36 @@ export function DnsRouteGroup() {
 
   const handleSaveRoute = async () => {
     if (!selectedInterface || !name) return;
-    setSaveError(null);
+    setRouteError(null);
     try {
-      if (route) {
-        await deleteRoute.mutateAsync(route.index);
-      }
+      if (route) await deleteRoute.mutateAsync(route.index);
       await addRoute.mutateAsync({
         group: name,
         interface: selectedInterface,
         comment: route?.comment || '',
       });
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save routing rule');
+      setRouteError(err instanceof Error ? err.message : 'Failed to save routing rule');
     }
   };
 
   const isLoading = groupsLoading || routesLoading;
-  const isSaving = addRoute.isPending || deleteRoute.isPending;
-  const currentIfaceName = route?.interface
-    ? interfaceNames.get(route.interface) || route.interface
-    : null;
+  const isSavingDomains = saveGroup.isPending;
+  const isSavingRoute = addRoute.isPending || deleteRoute.isPending;
+
+  const backBtn = (
+    <button className="dns-group-detail__back-btn" onClick={() => navigate('/dns-routes')}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="15,18 9,12 15,6" />
+      </svg>
+      DNS Routes
+    </button>
+  );
 
   if (isLoading) {
     return (
       <div className="dns-group-detail-page">
+        <div className="dns-group-detail__back">{backBtn}</div>
         <div className="dns-group-not-found">Loading...</div>
       </div>
     );
@@ -82,62 +158,100 @@ export function DnsRouteGroup() {
   if (!group) {
     return (
       <div className="dns-group-detail-page">
-        <div className="dns-group-detail__back">
-          <button className="dns-group-detail__back-btn" onClick={() => navigate('/dns-routes')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15,18 9,12 15,6" />
-            </svg>
-            DNS Routes
-          </button>
-        </div>
+        <div className="dns-group-detail__back">{backBtn}</div>
         <div className="dns-group-not-found">Domain group not found.</div>
       </div>
     );
   }
 
+  const currentIfaceName = route?.interface
+    ? interfaceNames.get(route.interface) || route.interface
+    : null;
+
   return (
     <div className="dns-group-detail-page">
-      <div className="dns-group-detail__back">
-        <button className="dns-group-detail__back-btn" onClick={() => navigate('/dns-routes')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15,18 9,12 15,6" />
-          </svg>
-          DNS Routes
-        </button>
-      </div>
+      <div className="dns-group-detail__back">{backBtn}</div>
 
       <Header
-        title={group.name}
-        subtitle={
-          group.description && group.description !== group.name
-            ? group.description
-            : `${group.domains.length} domain${group.domains.length !== 1 ? 's' : ''}`
-        }
+        title={group.description || group.name}
+        subtitle={`${domains.length} domain${domains.length !== 1 ? 's' : ''}`}
       />
 
-      {/* Domains */}
+      {/* Domains editor */}
       <Card
         title="Domains"
-        subtitle={`${group.domains.length} domain${group.domains.length !== 1 ? 's' : ''} configured`}
+        action={
+          domainsDirty ? (
+            <div className="dns-domains-actions">
+              <button
+                className="dns-domains-btn dns-domains-btn--ghost"
+                onClick={handleDiscardDomains}
+                disabled={isSavingDomains}
+              >
+                Discard
+              </button>
+              <button
+                className="dns-domains-btn dns-domains-btn--primary"
+                onClick={handleSaveDomains}
+                disabled={isSavingDomains}
+              >
+                {isSavingDomains ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          ) : undefined
+        }
       >
-        {group.domains.length === 0 ? (
-          <p className="dns-group-no-ips">No domains configured.</p>
-        ) : (
-          <ul className="dns-group-domains-list">
-            {group.domains.map((domain) => (
-              <li key={domain} className="dns-group-domains-list__item">
-                {domain}
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="dns-domains-editor">
+          {/* Domain list */}
+          {domains.length > 0 && (
+            <ul className="dns-domains-list">
+              {domains.map((domain) => (
+                <li key={domain} className="dns-domains-list__item">
+                  <span className="dns-domains-list__name">{domain}</span>
+                  <button
+                    className="dns-domains-list__remove"
+                    onClick={() => handleRemoveDomain(domain)}
+                    title={`Remove ${domain}`}
+                    aria-label={`Remove ${domain}`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Add domain input */}
+          <div className="dns-domains-add">
+            <input
+              ref={addInputRef}
+              className="dns-domains-add__input"
+              placeholder="Add domain (e.g. example.com)"
+              value={addInput}
+              onChange={(e) => { setAddInput(e.target.value); setDomainsError(null); }}
+              onKeyDown={handleAddKeyDown}
+            />
+            <button
+              className="dns-domains-btn dns-domains-btn--primary"
+              onClick={handleAddDomain}
+              disabled={!addInput.trim()}
+            >
+              Add
+            </button>
+          </div>
+
+          {domainsError && <p className="dns-domains-error">{domainsError}</p>}
+        </div>
       </Card>
 
       {/* Resolved IP Addresses */}
       <Card title="Resolved IP Addresses">
         <p className="dns-group-no-ips">
-          No IP addresses resolved yet. The router populates these automatically as DNS queries are
-          made for the configured domains.
+          No IP addresses resolved yet. The router populates these automatically as DNS queries
+          are made for the configured domains.
         </p>
       </Card>
 
@@ -158,7 +272,7 @@ export function DnsRouteGroup() {
             <select
               className="dns-group-routing__select"
               value={selectedInterface}
-              onChange={(e) => { setSelectedInterface(e.target.value); setSaveError(null); }}
+              onChange={(e) => { setSelectedInterface(e.target.value); setRouteError(null); }}
             >
               <option value="">Select interface...</option>
               {interfacesData?.interfaces.map((iface) => (
@@ -170,12 +284,12 @@ export function DnsRouteGroup() {
             <button
               className="dns-group-routing__save-btn"
               onClick={handleSaveRoute}
-              disabled={!selectedInterface || isSaving}
+              disabled={!selectedInterface || isSavingRoute}
             >
-              {isSaving ? 'Saving...' : route ? 'Update' : 'Add Route'}
+              {isSavingRoute ? 'Saving…' : route ? 'Update' : 'Add Route'}
             </button>
           </div>
-          {saveError && <div className="dns-group-routing__error">{saveError}</div>}
+          {routeError && <div className="dns-group-routing__error">{routeError}</div>}
         </div>
       </Card>
     </div>

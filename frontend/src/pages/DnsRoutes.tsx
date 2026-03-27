@@ -172,12 +172,9 @@ export function DnsRoutes() {
       key: 'name',
       header: 'Name',
       render: (group) => (
-        <button
-          className="dns-group-link"
-          onClick={() => navigate(`/dns-routes/${encodeURIComponent(group.name)}`)}
-        >
+        <span className="dns-group-name-cell">
           {group.description || group.name}
-        </button>
+        </span>
       ),
     },
     {
@@ -282,6 +279,7 @@ export function DnsRoutes() {
             keyExtractor={(g) => g.name}
             loading={groupsLoading}
             emptyMessage="No domain groups configured"
+            onRowClick={(g) => navigate(`/dns-routes/${encodeURIComponent(g.name)}`)}
           />
         </Card>
       </section>
