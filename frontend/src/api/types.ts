@@ -322,6 +322,33 @@ export interface DeviceEventsResponse {
   timestamp: string;
 }
 
+// DNS Routes types
+export interface DomainGroup {
+  name: string;
+  description: string | null;
+  domains: string[];
+}
+
+export interface DomainGroupsResponse {
+  domain_groups: DomainGroup[];
+  count: number;
+  timestamp: string;
+}
+
+export interface DnsRoute {
+  index: string;
+  group: string;
+  interface: string | null;
+  auto: boolean | null;
+  comment: string | null;
+}
+
+export interface DnsRoutesResponse {
+  routes: DnsRoute[];
+  count: number;
+  timestamp: string;
+}
+
 // Reboot response
 export interface RebootResponse {
   success: boolean;
