@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Header } from '../components/layout';
 import { Card } from '../components/ui';
 import {
   useDomainGroups,
   useDnsRoutes,
   useAddDnsRoute,
   useCreateDomainGroup,
+  useDeleteDomainGroup,
   useDeleteDnsRoute,
   useNetworkInterfaces,
 } from '../hooks';
@@ -39,6 +39,8 @@ export function DnsRouteGroup() {
   const [domains, setDomains] = useState<string[]>([]);
   const [addInput, setAddInput] = useState('');
   const [domainsError, setDomainsError] = useState<string | null>(null);
+  const [textareaMode, setTextareaMode] = useState(false);
+  const [textareaValue, setTextareaValue] = useState('');
 
   // Sync local domain list when group data loads (not while saving)
   useEffect(() => {
@@ -47,13 +49,34 @@ export function DnsRouteGroup() {
     }
   }, [group?.name, group?.domains.join(',')]);  // eslint-disable-line react-hooks/exhaustive-deps
 
+  const enterTextareaMode = () => {
+    setTextareaValue(domains.join('\n'));
+    setDomainsError(null);
+    setTextareaMode(true);
+  };
+
+  const exitTextareaMode = async () => {
+    const updated = textareaValue
+      .split('\n')
+      .map((d) => d.trim().toLowerCase())
+      .filter(Boolean)
+      .filter((d, i, arr) => arr.indexOf(d) === i); // deduplicate
+    setDomains(updated);
+    setTextareaMode(false);
+    await persistDomains(updated);
+  };
+
+  const cancelTextareaMode = () => {
+    setTextareaMode(false);
+    setDomainsError(null);
+  };
+
   const persistDomains = async (updated: string[]) => {
     if (!name || !group) return;
     setDomainsError(null);
     try {
       await saveGroup.mutateAsync({ name, description: group.description || name, domains: updated });
     } catch (err) {
-      // Revert optimistic update on failure
       setDomains(group.domains);
       setDomainsError(err instanceof Error ? err.message : 'Failed to save');
     }
@@ -83,6 +106,36 @@ export function DnsRouteGroup() {
   const handleAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') { e.preventDefault(); handleAddDomain(); }
     if (e.key === 'Escape') { setAddInput(''); setDomainsError(null); }
+  };
+
+  // ── Group name editing ───────────────────────────────────────────────────
+  const [nameValue, setNameValue] = useState('');
+  const [nameError, setNameError] = useState<string | null>(null);
+  const renameGroup = useCreateDomainGroup();
+  const removeGroup = useDeleteDomainGroup();
+
+  useEffect(() => {
+    if (group) setNameValue(group.description || group.name);
+  }, [group?.name, group?.description]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleNameBlur = async () => {
+    const newName = nameValue.trim();
+    if (!newName || !group || !name) return;
+    if (newName === (group.description || group.name)) return; // unchanged
+    setNameError(null);
+    try {
+      // Create new group with new name, delete old one
+      await renameGroup.mutateAsync({ name: newName, description: newName, domains: group.domains });
+      if (route) {
+        await deleteRoute.mutateAsync(route.index);
+        await addRoute.mutateAsync({ group: newName, interface: route.interface || '', comment: route.comment || '' });
+      }
+      await removeGroup.mutateAsync(name);
+      navigate(`/dns-routes/${encodeURIComponent(newName)}`, { replace: true });
+    } catch (err) {
+      setNameValue(group.description || group.name);
+      setNameError(err instanceof Error ? err.message : 'Failed to rename');
+    }
   };
 
   // ── Routing rule state ───────────────────────────────────────────────────
@@ -138,66 +191,97 @@ export function DnsRouteGroup() {
     );
   }
 
+  const domainsCardAction = saveGroup.isPending ? (
+    <span className="dns-domains-saving">Saving…</span>
+  ) : textareaMode ? (
+    <div className="dns-domains-actions">
+      <button className="dns-domains-btn dns-domains-btn--ghost" onClick={cancelTextareaMode}>
+        Cancel
+      </button>
+      <button className="dns-domains-btn dns-domains-btn--primary" onClick={exitTextareaMode}>
+        Apply
+      </button>
+    </div>
+  ) : (
+    <button className="dns-domains-btn dns-domains-btn--ghost" onClick={enterTextareaMode}>
+      Edit as text
+    </button>
+  );
+
   return (
     <div className="dns-group-detail-page">
       <div className="dns-group-detail__back">{backBtn}</div>
 
-      <Header
-        title={group.description || group.name}
-        subtitle={`${domains.length} domain${domains.length !== 1 ? 's' : ''}`}
-      />
+      <div className="dns-group-header">
+        <input
+          className="dns-group-title-input"
+          value={nameValue}
+          onChange={(e) => { setNameValue(e.target.value); setNameError(null); }}
+          onBlur={handleNameBlur}
+          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { setNameValue(group.description || group.name); e.currentTarget.blur(); } }}
+          aria-label="Group name"
+        />
+        <div className="dns-group-subtitle">
+          {domains.length} domain{domains.length !== 1 ? 's' : ''}
+        </div>
+        {nameError && <p className="dns-domains-error">{nameError}</p>}
+      </div>
 
       {/* Domains editor */}
-      <Card
-        title="Domains"
-        action={
-          saveGroup.isPending ? (
-            <span className="dns-domains-saving">Saving…</span>
-          ) : undefined
-        }
-      >
+      <Card title="Domains" action={domainsCardAction}>
         <div className="dns-domains-editor">
-          {/* Domain list */}
-          {domains.length > 0 && (
-            <ul className="dns-domains-list">
-              {domains.map((domain) => (
-                <li key={domain} className="dns-domains-list__item">
-                  <span className="dns-domains-list__name">{domain}</span>
-                  <button
-                    className="dns-domains-list__remove"
-                    onClick={() => handleRemoveDomain(domain)}
-                    title={`Remove ${domain}`}
-                    aria-label={`Remove ${domain}`}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {textareaMode ? (
+            <>
+              <textarea
+                className="dns-domains-textarea"
+                value={textareaValue}
+                onChange={(e) => setTextareaValue(e.target.value)}
+                placeholder={'youtube.com\ngooglevideo.com\nytimg.com'}
+                autoFocus
+              />
+              <div className="dns-domains-textarea-hint">One domain per line. Duplicates removed on apply.</div>
+            </>
+          ) : (
+            <>
+              {domains.length > 0 && (
+                <ul className="dns-domains-list">
+                  {domains.map((domain) => (
+                    <li key={domain} className="dns-domains-list__item">
+                      <span className="dns-domains-list__name">{domain}</span>
+                      <button
+                        className="dns-domains-list__remove"
+                        onClick={() => handleRemoveDomain(domain)}
+                        title={`Remove ${domain}`}
+                        aria-label={`Remove ${domain}`}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="dns-domains-add">
+                <input
+                  ref={addInputRef}
+                  className="dns-domains-add__input"
+                  placeholder="Add domain (e.g. example.com)"
+                  value={addInput}
+                  onChange={(e) => { setAddInput(e.target.value); setDomainsError(null); }}
+                  onKeyDown={handleAddKeyDown}
+                />
+                <button
+                  className="dns-domains-btn dns-domains-btn--primary"
+                  onClick={handleAddDomain}
+                  disabled={!addInput.trim()}
+                >
+                  Add
+                </button>
+              </div>
+            </>
           )}
-
-          {/* Add domain input */}
-          <div className="dns-domains-add">
-            <input
-              ref={addInputRef}
-              className="dns-domains-add__input"
-              placeholder="Add domain (e.g. example.com)"
-              value={addInput}
-              onChange={(e) => { setAddInput(e.target.value); setDomainsError(null); }}
-              onKeyDown={handleAddKeyDown}
-            />
-            <button
-              className="dns-domains-btn dns-domains-btn--primary"
-              onClick={handleAddDomain}
-              disabled={!addInput.trim()}
-            >
-              Add
-            </button>
-          </div>
-
           {domainsError && <p className="dns-domains-error">{domainsError}</p>}
         </div>
       </Card>
