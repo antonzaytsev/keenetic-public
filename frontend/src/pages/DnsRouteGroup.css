@@ -1,0 +1,162 @@
+.dns-group-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  min-width: 0;
+}
+
+/* Back link */
+.dns-group-detail__back {
+  display: flex;
+  align-items: center;
+}
+
+.dns-group-detail__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  transition: color 0.15s ease;
+}
+
+.dns-group-detail__back-btn:hover {
+  color: var(--accent-primary);
+}
+
+.dns-group-detail__back-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Domains list */
+.dns-group-domains-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dns-group-domains-list__item {
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dns-group-domains-list__item:last-child {
+  border-bottom: none;
+}
+
+/* IP addresses empty state */
+.dns-group-no-ips {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* Routing rule section */
+.dns-group-routing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.dns-group-routing__current {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.dns-group-routing__interface {
+  font-weight: 600;
+  color: var(--color-info);
+}
+
+.dns-group-routing__form {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.dns-group-routing__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.dns-group-routing__select {
+  flex: 1;
+  min-width: 180px;
+  padding: 7px 10px;
+  background: var(--bg-input, var(--color-surface-elevated));
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.dns-group-routing__select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.dns-group-routing__save-btn {
+  padding: 7px 16px;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.dns-group-routing__save-btn:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+}
+
+.dns-group-routing__save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dns-group-routing__error {
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--border-radius);
+  color: var(--accent-danger);
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+/* Not found state */
+.dns-group-not-found {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 768px) {
+  .dns-group-routing__form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dns-group-routing__select {
+    min-width: unset;
+  }
+}

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card, Table, type Column, Modal } from '../components/ui';
 import {
@@ -15,20 +15,6 @@ import type { DomainGroup, DnsRoute } from '../api';
 import './DnsRoutes.css';
 
 const icons = {
-  groups: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="2" y="3" width="20" height="4" rx="1" />
-      <rect x="2" y="10" width="20" height="4" rx="1" />
-      <rect x="2" y="17" width="20" height="4" rx="1" />
-    </svg>
-  ),
-  routes: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M2 12h20" />
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-    </svg>
-  ),
   edit: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -49,14 +35,6 @@ const icons = {
   ),
 };
 
-type TabType = 'groups' | 'routes';
-
-function getTabFromHash(hash: string): TabType {
-  const tab = hash.replace('#', '');
-  if (tab === 'routes') return 'routes';
-  return 'groups';
-}
-
 interface GroupFormData {
   name: string;
   description: string;
@@ -74,9 +52,7 @@ interface RouteFormData {
 const emptyRouteForm: RouteFormData = { group: '', interface: '', comment: '' };
 
 export function DnsRoutes() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const activeTab = getTabFromHash(location.hash);
 
   const { data: groupsData, isLoading: groupsLoading } = useDomainGroups();
   const { data: routesData, isLoading: routesLoading } = useDnsRoutes();
@@ -98,15 +74,25 @@ export function DnsRoutes() {
   const [routeForm, setRouteForm] = useState<RouteFormData>(emptyRouteForm);
   const [routeFormError, setRouteFormError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!location.hash) {
-      navigate('#groups', { replace: true });
-    }
-  }, [location.hash, navigate]);
+  // Map group name → its DNS route
+  const groupRouteMap = useMemo(() => {
+    const map = new Map<string, DnsRoute>();
+    routesData?.routes.forEach((r) => {
+      if (r.group) map.set(r.group, r);
+    });
+    return map;
+  }, [routesData]);
 
-  const handleTabChange = (tab: TabType) => navigate(`#${tab}`);
+  // Map interface id → display name
+  const interfaceNames = useMemo(() => {
+    const map = new Map<string, string>();
+    interfacesData?.interfaces.forEach((iface) => {
+      if (iface.id) map.set(iface.id, iface.description || iface.id);
+    });
+    return map;
+  }, [interfacesData]);
 
-  // Group modal handlers
+  // ── Group modal handlers ────────────────────────────────────────────────
   const openCreateGroupModal = () => {
     setGroupForm(emptyGroupForm);
     setGroupFormError(null);
@@ -139,18 +125,9 @@ export function DnsRoutes() {
       .map((d) => d.trim())
       .filter(Boolean);
 
-    if (!name.trim()) {
-      setGroupFormError('Name is required');
-      return;
-    }
-    if (!description.trim()) {
-      setGroupFormError('Description is required');
-      return;
-    }
-    if (domains.length === 0) {
-      setGroupFormError('At least one domain is required');
-      return;
-    }
+    if (!name.trim()) { setGroupFormError('Name is required'); return; }
+    if (!description.trim()) { setGroupFormError('Description is required'); return; }
+    if (domains.length === 0) { setGroupFormError('At least one domain is required'); return; }
 
     try {
       await createGroup.mutateAsync({ name: name.trim(), description: description.trim(), domains });
@@ -168,7 +145,7 @@ export function DnsRoutes() {
     }
   };
 
-  // Route modal handlers
+  // ── Route modal handlers ────────────────────────────────────────────────
   const openCreateRouteModal = () => {
     setRouteForm(emptyRouteForm);
     setRouteFormError(null);
@@ -183,14 +160,8 @@ export function DnsRoutes() {
 
   const handleRouteSubmit = async () => {
     const { group, interface: iface, comment } = routeForm;
-    if (!group) {
-      setRouteFormError('Domain group is required');
-      return;
-    }
-    if (!iface) {
-      setRouteFormError('Interface is required');
-      return;
-    }
+    if (!group) { setRouteFormError('Domain group is required'); return; }
+    if (!iface) { setRouteFormError('Interface is required'); return; }
     try {
       await addRoute.mutateAsync({ group, interface: iface, comment });
       closeRouteModal();
@@ -207,25 +178,56 @@ export function DnsRoutes() {
     }
   };
 
+  // ── Table columns ────────────────────────────────────────────────────────
   const groupColumns: Column<DomainGroup>[] = [
     {
-      key: 'description',
+      key: 'name',
       header: 'Name',
       render: (group) => (
-        <div>
-          <div className="dns-group-description">{group.description || group.name}</div>
-          <div className="dns-group-name">{group.name}</div>
-        </div>
+        <button
+          className="dns-group-link"
+          onClick={() => navigate(`/dns-routes/${encodeURIComponent(group.name)}`)}
+        >
+          {group.name}
+          {group.description && group.description !== group.name && (
+            <span className="dns-group-link__desc">{group.description}</span>
+          )}
+        </button>
       ),
     },
     {
       key: 'domains',
-      header: 'Domains',
-      render: (group) => (
-        <span className="dns-group-domains" title={group.domains.join(', ')}>
-          {group.domains.join(', ') || '-'}
-        </span>
-      ),
+      header: 'Domain names',
+      width: '130px',
+      align: 'right',
+      render: (group) => <span className="dns-count">{group.domains.length}</span>,
+    },
+    {
+      key: 'ipv4',
+      header: 'IPv4 addresses',
+      width: '140px',
+      align: 'right',
+      render: () => <span className="dns-count">0</span>,
+    },
+    {
+      key: 'ipv6',
+      header: 'IPv6 addresses',
+      width: '140px',
+      align: 'right',
+      render: () => <span className="dns-count">0</span>,
+    },
+    {
+      key: 'interface',
+      header: 'Interface',
+      render: (group) => {
+        const route = groupRouteMap.get(group.name);
+        if (!route?.interface) return <span className="dns-no-route">—</span>;
+        return (
+          <span className="dns-route-interface">
+            {interfaceNames.get(route.interface) || route.interface}
+          </span>
+        );
+      },
     },
     {
       key: 'actions',
@@ -236,14 +238,14 @@ export function DnsRoutes() {
         <div className="dns-actions">
           <button
             className="dns-actions__btn dns-actions__btn--edit"
-            onClick={() => openEditGroupModal(group)}
+            onClick={(e) => { e.stopPropagation(); openEditGroupModal(group); }}
             title="Edit group"
           >
             {icons.edit}
           </button>
           <button
             className="dns-actions__btn dns-actions__btn--delete"
-            onClick={() => handleDeleteGroup(group)}
+            onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group); }}
             title="Delete group"
           >
             {icons.delete}
@@ -256,18 +258,41 @@ export function DnsRoutes() {
   const routeColumns: Column<DnsRoute>[] = [
     {
       key: 'group',
-      header: 'Domain Group',
-      render: (route) => <span className="dns-route-group">{route.group}</span>,
+      header: 'List name',
+      render: (route) => (
+        <button
+          className="dns-group-link"
+          onClick={() => navigate(`/dns-routes/${encodeURIComponent(route.group)}`)}
+        >
+          {route.group}
+        </button>
+      ),
     },
     {
       key: 'interface',
       header: 'Interface',
-      render: (route) => <span className="dns-route-interface">{route.interface || '-'}</span>,
+      render: (route) => (
+        <span className="dns-route-interface">
+          {interfaceNames.get(route.interface || '') || route.interface || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'auto',
+      header: 'Add automatically',
+      width: '160px',
+      render: (route) => (
+        <span className={`dns-bool ${route.auto ? 'dns-bool--yes' : 'dns-bool--no'}`}>
+          {route.auto ? 'Yes' : 'No'}
+        </span>
+      ),
     },
     {
       key: 'comment',
       header: 'Comment',
-      render: (route) => <span className="dns-route-comment">{route.comment || '-'}</span>,
+      render: (route) => (
+        <span className="dns-route-comment">{route.comment || '—'}</span>
+      ),
     },
     {
       key: 'actions',
@@ -292,80 +317,48 @@ export function DnsRoutes() {
     <div className="dns-routes-page">
       <Header
         title="DNS Routes"
-        subtitle={`${groupsData?.count ?? 0} domain groups, ${routesData?.count ?? 0} routes`}
+        subtitle={`${groupsData?.count ?? 0} domain groups · ${routesData?.count ?? 0} routing rules`}
       />
 
-      <div className="dns-routes-stats">
-        <Card className="dns-routes-stats__card">
-          <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--color-primary)' }}>
-            {groupsData?.count ?? 0}
-          </div>
-          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-            Domain Groups
-          </div>
-        </Card>
-        <Card className="dns-routes-stats__card">
-          <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, color: 'var(--color-success)' }}>
-            {routesData?.count ?? 0}
-          </div>
-          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-            Active Routes
-          </div>
-        </Card>
-      </div>
-
-      <div className="dns-routes-tabbed">
-        <div className="dns-routes-tabs">
-          <button
-            className={`dns-routes-tabs__tab ${activeTab === 'groups' ? 'dns-routes-tabs__tab--active' : ''}`}
-            onClick={() => handleTabChange('groups')}
-          >
-            {icons.groups}
-            Domain Groups
+      {/* Domain Name Lists */}
+      <section className="dns-routes-section">
+        <div className="dns-routes-section__header">
+          <h2 className="dns-routes-section__title">Domain Name Lists</h2>
+          <button className="dns-routes-add-btn" onClick={openCreateGroupModal}>
+            {icons.plus}
+            Create group
           </button>
-          <button
-            className={`dns-routes-tabs__tab ${activeTab === 'routes' ? 'dns-routes-tabs__tab--active' : ''}`}
-            onClick={() => handleTabChange('routes')}
-          >
-            {icons.routes}
-            Routes
-          </button>
-          <div className="dns-routes-tabs__spacer" />
-          {activeTab === 'groups' && (
-            <button className="dns-routes-add-btn" onClick={openCreateGroupModal}>
-              {icons.plus}
-              Create group
-            </button>
-          )}
-          {activeTab === 'routes' && (
-            <button className="dns-routes-add-btn" onClick={openCreateRouteModal}>
-              {icons.plus}
-              Add route
-            </button>
-          )}
         </div>
+        <Card padding="none">
+          <Table
+            columns={groupColumns}
+            data={groupsData?.domain_groups ?? []}
+            keyExtractor={(g) => g.name}
+            loading={groupsLoading}
+            emptyMessage="No domain groups configured"
+          />
+        </Card>
+      </section>
 
-        <div className="dns-routes-tab-content">
-          {activeTab === 'groups' && (
-            <Table
-              columns={groupColumns}
-              data={groupsData?.domain_groups ?? []}
-              keyExtractor={(g) => g.name}
-              loading={groupsLoading}
-              emptyMessage="No domain groups configured"
-            />
-          )}
-          {activeTab === 'routes' && (
-            <Table
-              columns={routeColumns}
-              data={routesData?.routes ?? []}
-              keyExtractor={(r) => r.index}
-              loading={routesLoading}
-              emptyMessage="No DNS routes configured"
-            />
-          )}
+      {/* Routing Rules */}
+      <section className="dns-routes-section">
+        <div className="dns-routes-section__header">
+          <h2 className="dns-routes-section__title">Routing Rules</h2>
+          <button className="dns-routes-add-btn" onClick={openCreateRouteModal}>
+            {icons.plus}
+            Add route
+          </button>
         </div>
-      </div>
+        <Card padding="none">
+          <Table
+            columns={routeColumns}
+            data={routesData?.routes ?? []}
+            keyExtractor={(r) => r.index}
+            loading={routesLoading}
+            emptyMessage="No routing rules configured"
+          />
+        </Card>
+      </section>
 
       {/* Create/Edit Domain Group Modal */}
       <Modal
@@ -392,7 +385,7 @@ export function DnsRoutes() {
             <label className="modal-form__label">Name (identifier)</label>
             <input
               className="modal-form__input"
-              placeholder="e.g., domain-list0"
+              placeholder="e.g., youtube"
               value={groupForm.name}
               disabled={!!editingGroup}
               onChange={(e) => setGroupForm((f) => ({ ...f, name: e.target.value }))}
@@ -421,11 +414,11 @@ export function DnsRoutes() {
         </div>
       </Modal>
 
-      {/* Add DNS Route Modal */}
+      {/* Add Route Modal */}
       <Modal
         isOpen={isRouteModalOpen}
         onClose={closeRouteModal}
-        title="Add DNS Route"
+        title="Add Routing Rule"
         footer={
           <>
             <button className="modal-btn modal-btn--secondary" onClick={closeRouteModal}>
@@ -452,7 +445,9 @@ export function DnsRoutes() {
               <option value="">Select domain group...</option>
               {groupsData?.domain_groups.map((g) => (
                 <option key={g.name} value={g.name}>
-                  {g.description || g.name}
+                  {g.description && g.description !== g.name
+                    ? `${g.name} (${g.description})`
+                    : g.name}
                 </option>
               ))}
             </select>

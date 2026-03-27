@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/layout';
-import { Dashboard, DeviceDetail, DeviceLogs, Devices, DnsRoutes, Interfaces, Policies, Routes as RoutesPage, System, SystemLogs } from './pages';
+import { Dashboard, DeviceDetail, DeviceLogs, Devices, DnsRoutes, DnsRouteGroup, Interfaces, Policies, Routes as RoutesPage, System, SystemLogs } from './pages';
 
 function App() {
   return (
@@ -16,6 +16,7 @@ function App() {
           <Route path="/policies" element={<Policies />} />
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/dns-routes" element={<DnsRoutes />} />
+          <Route path="/dns-routes/:name" element={<DnsRouteGroup />} />
           <Route path="/system" element={<System />} />
         </Route>
       </Routes>
