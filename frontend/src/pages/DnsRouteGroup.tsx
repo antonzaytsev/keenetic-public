@@ -128,7 +128,7 @@ export function DnsRouteGroup() {
       await renameGroup.mutateAsync({ name: newName, description: newName, domains: group.domains });
       if (route) {
         await deleteRoute.mutateAsync(route.index);
-        await addRoute.mutateAsync({ group: newName, interface: route.interface || '', comment: route.comment || '' });
+        await addRoute.mutateAsync({ group: newName, interface: route.interface || '', comment: route.comment || '', auto: route.auto ?? true, exclusive: route.exclusive ?? false });
       }
       await removeGroup.mutateAsync(name);
       navigate(`/dns-routes/${encodeURIComponent(newName)}`, { replace: true });
@@ -325,7 +325,10 @@ export function DnsRouteGroup() {
               onChange={(e) => handleInterfaceChange(e.target.value)}
             >
               <option value="">No routing rule</option>
-              {interfacesData?.interfaces.filter((iface) => iface.security === 'public').map((iface) => (
+              {[...(interfacesData?.interfaces ?? [])]
+                .filter((iface) => iface.security === 'public' && iface.connected)
+                .sort((a, b) => (a.description || a.id).localeCompare(b.description || b.id))
+                .map((iface) => (
                 <option key={iface.id} value={iface.id}>
                   {iface.description || iface.id}
                 </option>
