@@ -140,25 +140,49 @@ export function DnsRouteGroup() {
 
   // ── Routing rule state ───────────────────────────────────────────────────
   const [selectedInterface, setSelectedInterface] = useState('');
+  const [routeAuto, setRouteAuto] = useState(true);
+  const [routeExclusive, setRouteExclusive] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (route?.interface) setSelectedInterface(route.interface);
-  }, [route?.interface]);
+    if (route) {
+      setSelectedInterface(route.interface || '');
+      setRouteAuto(route.auto ?? true);
+      setRouteExclusive(route.exclusive ?? false);
+    }
+  }, [route?.interface, route?.auto, route?.exclusive]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleInterfaceChange = async (newInterface: string) => {
+  const persistRoute = async (iface: string, auto: boolean, exclusive: boolean) => {
     if (!name) return;
-    setSelectedInterface(newInterface);
     setRouteError(null);
     try {
       if (route) await deleteRoute.mutateAsync(route.index);
-      if (newInterface) {
-        await addRoute.mutateAsync({ group: name, interface: newInterface, comment: route?.comment || '' });
+      if (iface) {
+        await addRoute.mutateAsync({ group: name, interface: iface, comment: route?.comment || '', auto, exclusive });
       }
     } catch (err) {
-      setSelectedInterface(route?.interface || '');
+      if (route) {
+        setSelectedInterface(route.interface || '');
+        setRouteAuto(route.auto ?? true);
+        setRouteExclusive(route.exclusive ?? false);
+      }
       setRouteError(err instanceof Error ? err.message : 'Failed to save routing rule');
     }
+  };
+
+  const handleInterfaceChange = (newInterface: string) => {
+    setSelectedInterface(newInterface);
+    persistRoute(newInterface, routeAuto, routeExclusive);
+  };
+
+  const handleAutoChange = (checked: boolean) => {
+    setRouteAuto(checked);
+    if (selectedInterface) persistRoute(selectedInterface, checked, routeExclusive);
+  };
+
+  const handleExclusiveChange = (checked: boolean) => {
+    setRouteExclusive(checked);
+    if (selectedInterface) persistRoute(selectedInterface, routeAuto, checked);
   };
 
   const isLoading = groupsLoading || routesLoading;
@@ -308,6 +332,30 @@ export function DnsRouteGroup() {
               ))}
             </select>
           </div>
+          {selectedInterface && (
+            <div className="dns-group-routing__checkboxes">
+              <label className="dns-group-routing__checkbox-label">
+                <input
+                  type="checkbox"
+                  className="dns-group-routing__checkbox"
+                  checked={routeAuto}
+                  disabled={isSavingRoute}
+                  onChange={(e) => handleAutoChange(e.target.checked)}
+                />
+                Add automatically
+              </label>
+              <label className="dns-group-routing__checkbox-label">
+                <input
+                  type="checkbox"
+                  className="dns-group-routing__checkbox"
+                  checked={routeExclusive}
+                  disabled={isSavingRoute}
+                  onChange={(e) => handleExclusiveChange(e.target.checked)}
+                />
+                Exclusive route
+              </label>
+            </div>
+          )}
           {routeError && <div className="dns-group-routing__error">{routeError}</div>}
         </div>
       </Card>
