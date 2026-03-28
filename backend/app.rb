@@ -19,7 +19,7 @@ class App < Roda
   plugin :all_verbs
 
   def keenetic_client
-    @keenetic_client ||= Keenetic.client
+    Keenetic.client
   end
 
   error do |e|
