@@ -204,6 +204,20 @@ export function DnsRoutes() {
       },
     },
     {
+      key: 'exclusive',
+      header: 'Exclusive Route',
+      width: '145px',
+      render: (group) => {
+        const route = groupRouteMap.get(group.name);
+        if (!route) return <span className="dns-no-route">—</span>;
+        return (
+          <span className={`dns-bool ${route.exclusive ? 'dns-bool--yes' : 'dns-bool--no'}`}>
+            {route.exclusive ? 'Yes' : 'No'}
+          </span>
+        );
+      },
+    },
+    {
       key: 'actions',
       header: '',
       width: '80px',
