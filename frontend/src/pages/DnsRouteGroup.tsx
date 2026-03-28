@@ -325,7 +325,7 @@ export function DnsRouteGroup() {
               onChange={(e) => handleInterfaceChange(e.target.value)}
             >
               <option value="">No routing rule</option>
-              {interfacesData?.interfaces.filter((iface) => iface.connected).map((iface) => (
+              {interfacesData?.interfaces.filter((iface) => iface.security === 'public').map((iface) => (
                 <option key={iface.id} value={iface.id}>
                   {iface.description || iface.id}
                 </option>
