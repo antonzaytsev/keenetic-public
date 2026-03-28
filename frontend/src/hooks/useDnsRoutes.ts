@@ -50,6 +50,8 @@ interface AddDnsRouteParams {
   group: string;
   interface: string;
   comment?: string;
+  auto?: boolean;
+  exclusive?: boolean;
 }
 
 export function useAddDnsRoute() {
