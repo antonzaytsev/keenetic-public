@@ -249,7 +249,9 @@ export function DnsRoutes() {
         <Card padding="none">
           <Table
             columns={columns}
-            data={groupsData?.domain_groups ?? []}
+            data={[...(groupsData?.domain_groups ?? [])].sort((a, b) =>
+              (a.description || a.name).localeCompare(b.description || b.name)
+            )}
             keyExtractor={(g) => g.name}
             loading={groupsLoading}
             emptyMessage="No domain groups configured"
