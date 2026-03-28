@@ -322,7 +322,7 @@ export function DnsRoutes() {
               onChange={(e) => setForm((f) => ({ ...f, interface: e.target.value }))}
             >
               <option value="">No routing rule</option>
-              {interfacesData?.interfaces.map((iface) => (
+              {interfacesData?.interfaces.filter((iface) => iface.connected).map((iface) => (
                 <option key={iface.id} value={iface.id}>
                   {iface.description || iface.id}
                 </option>
