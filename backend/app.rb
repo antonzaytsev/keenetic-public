@@ -116,6 +116,7 @@ class App < Roda
         end
       end
 
+
       # Devices endpoints
       r.on 'devices' do
         r.is do
@@ -676,20 +677,8 @@ class App < Roda
         r.on 'routes' do
           r.is do
             # GET /api/dns-routes/routes
-            # Call RCI directly to get all fields including 'exclusive'
             r.get do
-              rci_response = keenetic_client.rci([{ 'show' => { 'sc' => { 'dns-proxy' => { 'route' => {} } } } }])
-              raw_routes = rci_response.dig(0, 'show', 'sc', 'dns-proxy', 'route') || []
-              routes = Array(raw_routes).map do |rt|
-                {
-                  index: rt['index'],
-                  group: rt['group'],
-                  interface: rt['interface'],
-                  auto: rt['auto'],
-                  exclusive: rt['exclusive'],
-                  comment: rt['comment']
-                }
-              end
+              routes = keenetic_client.dns_routes.routes
               {
                 routes: routes,
                 count: routes.size,
@@ -698,13 +687,12 @@ class App < Roda
             end
 
             # POST /api/dns-routes/routes
+            # Keenetic updates routes in-place when the same group name is used.
             r.post do
               params = r.params
               group = params['group']
               interface = params['interface']
               comment = params['comment'] || ''
-              auto = params['auto']
-              exclusive = params['exclusive']
 
               if group.nil? || group.strip.empty?
                 response.status = 400
@@ -724,19 +712,7 @@ class App < Roda
                 }
               end
 
-              route_params = {
-                'group' => group,
-                'interface' => interface,
-                'comment' => comment
-              }
-              route_params['auto'] = auto == true || auto == 'true' unless auto.nil?
-              route_params['exclusive'] = exclusive == true || exclusive == 'true' unless exclusive.nil?
-
-              keenetic_client.rci([
-                { 'webhelp' => { 'event' => { 'push' => { 'data' => '{"type":"configuration_change","value":{"url":"/staticRoutes/dns"}}' } } } },
-                { 'dns-proxy' => { 'route' => route_params } },
-                { 'system' => { 'configuration' => { 'save' => {} } } }
-              ])
+              keenetic_client.dns_routes.add_route(group: group, interface: interface, comment: comment)
               {
                 success: true,
                 timestamp: Time.now.iso8601

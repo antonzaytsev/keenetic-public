@@ -119,12 +119,11 @@ export function DnsRoutes() {
       // Handle routing rule
       const existingRoute = groupRouteMap.get(groupName);
       if (iface) {
-        // Create or update route: delete old first if interface changed
-        if (existingRoute && existingRoute.interface !== iface) {
-          await deleteRoute.mutateAsync(existingRoute.index);
-        }
         if (!existingRoute || existingRoute.interface !== iface) {
-          await addRoute.mutateAsync({ group: groupName, interface: iface });
+          await addRoute.mutateAsync({
+            group: groupName,
+            interface: iface,
+          });
         }
       } else if (existingRoute) {
         // Interface cleared — remove the route
@@ -199,20 +198,6 @@ export function DnsRoutes() {
         return (
           <span className={`dns-bool ${route.auto ? 'dns-bool--yes' : 'dns-bool--no'}`}>
             {route.auto ? 'Yes' : 'No'}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'exclusive',
-      header: 'Exclusive Route',
-      width: '145px',
-      render: (group) => {
-        const route = groupRouteMap.get(group.name);
-        if (!route) return <span className="dns-no-route">—</span>;
-        return (
-          <span className={`dns-bool ${route.exclusive ? 'dns-bool--yes' : 'dns-bool--no'}`}>
-            {route.exclusive ? 'Yes' : 'No'}
           </span>
         );
       },

@@ -340,7 +340,6 @@ export interface DnsRoute {
   group: string;
   interface: string | null;
   auto: boolean | null;
-  exclusive: boolean | null;
   comment: string | null;
 }
 

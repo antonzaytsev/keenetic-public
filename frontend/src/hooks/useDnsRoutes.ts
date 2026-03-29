@@ -50,8 +50,6 @@ interface AddDnsRouteParams {
   group: string;
   interface: string;
   comment?: string;
-  auto?: boolean;
-  exclusive?: boolean;
 }
 
 export function useAddDnsRoute() {
@@ -60,7 +58,7 @@ export function useAddDnsRoute() {
     mutationFn: (params: AddDnsRouteParams) =>
       api.post<{ success: boolean }>('/dns-routes/routes', params as unknown as Record<string, unknown>),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dns-routes', 'routes'] });
+      queryClient.invalidateQueries({ queryKey: ['dns-routes'] });
     },
   });
 }

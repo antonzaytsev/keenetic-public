@@ -1,8 +1,8 @@
 GIT
   remote: https://github.com/antonzaytsev/keenetic-ruby.git
-  revision: 3a952837c7934d6272e9a387875a0827deff564a
+  revision: 82cfda03867879b01c4c37db3c10619b67a20535
   specs:
-    keenetic (1.1.0)
+    keenetic (1.1.1)
       logger (~> 1.0)
       typhoeus (~> 1.4)
 
@@ -127,7 +127,7 @@ CHECKSUMS
   ffi (1.17.4-x86_64-linux-musl) sha256=3fdf9888483de005f8ef8d1cf2d3b20d86626af206cbf780f6a6a12439a9c49e
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
-  keenetic (1.1.0)
+  keenetic (1.1.1)
   listen (3.9.0) sha256=db9e4424e0e5834480385197c139cb6b0ae0ef28cc13310cfd1ca78377d59c67
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5

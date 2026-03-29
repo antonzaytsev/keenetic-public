@@ -6,7 +6,6 @@ import {
   useDnsRoutes,
   useAddDnsRoute,
   useCreateDomainGroup,
-  useDeleteDomainGroup,
   useDeleteDnsRoute,
   useNetworkInterfaces,
 } from '../hooks';
@@ -112,26 +111,19 @@ export function DnsRouteGroup() {
   const [nameValue, setNameValue] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const renameGroup = useCreateDomainGroup();
-  const removeGroup = useDeleteDomainGroup();
 
   useEffect(() => {
     if (group) setNameValue(group.description || group.name);
   }, [group?.name, group?.description]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNameBlur = async () => {
-    const newName = nameValue.trim();
-    if (!newName || !group || !name) return;
-    if (newName === (group.description || group.name)) return; // unchanged
+    const newDescription = nameValue.trim();
+    if (!newDescription || !group || !name) return;
+    if (newDescription === (group.description || group.name)) return; // unchanged
     setNameError(null);
     try {
-      // Create new group with new name, delete old one
-      await renameGroup.mutateAsync({ name: newName, description: newName, domains: group.domains });
-      if (route) {
-        await deleteRoute.mutateAsync(route.index);
-        await addRoute.mutateAsync({ group: newName, interface: route.interface || '', comment: route.comment || '', auto: route.auto ?? true, exclusive: route.exclusive ?? false });
-      }
-      await removeGroup.mutateAsync(name);
-      navigate(`/dns-routes/${encodeURIComponent(newName)}`, { replace: true });
+      // Update only the public description, keep the internal name unchanged
+      await renameGroup.mutateAsync({ name, description: newDescription, domains: group.domains });
     } catch (err) {
       setNameValue(group.description || group.name);
       setNameError(err instanceof Error ? err.message : 'Failed to rename');
@@ -140,31 +132,30 @@ export function DnsRouteGroup() {
 
   // ── Routing rule state ───────────────────────────────────────────────────
   const [selectedInterface, setSelectedInterface] = useState('');
-  const [routeAuto, setRouteAuto] = useState(true);
-  const [routeExclusive, setRouteExclusive] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (route) {
       setSelectedInterface(route.interface || '');
-      setRouteAuto(route.auto ?? true);
-      setRouteExclusive(route.exclusive ?? false);
     }
-  }, [route?.interface, route?.auto, route?.exclusive]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [route?.interface]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const persistRoute = async (iface: string, auto: boolean, exclusive: boolean) => {
+  const persistRoute = async (iface: string) => {
     if (!name) return;
     setRouteError(null);
     try {
-      if (route) await deleteRoute.mutateAsync(route.index);
       if (iface) {
-        await addRoute.mutateAsync({ group: name, interface: iface, comment: route?.comment || '', auto, exclusive });
+        await addRoute.mutateAsync({
+          group: name,
+          interface: iface,
+          comment: route?.comment || '',
+        });
+      } else if (route) {
+        await deleteRoute.mutateAsync(route.index);
       }
     } catch (err) {
       if (route) {
         setSelectedInterface(route.interface || '');
-        setRouteAuto(route.auto ?? true);
-        setRouteExclusive(route.exclusive ?? false);
       }
       setRouteError(err instanceof Error ? err.message : 'Failed to save routing rule');
     }
@@ -172,17 +163,7 @@ export function DnsRouteGroup() {
 
   const handleInterfaceChange = (newInterface: string) => {
     setSelectedInterface(newInterface);
-    persistRoute(newInterface, routeAuto, routeExclusive);
-  };
-
-  const handleAutoChange = (checked: boolean) => {
-    setRouteAuto(checked);
-    if (selectedInterface) persistRoute(selectedInterface, checked, routeExclusive);
-  };
-
-  const handleExclusiveChange = (checked: boolean) => {
-    setRouteExclusive(checked);
-    if (selectedInterface) persistRoute(selectedInterface, routeAuto, checked);
+    persistRoute(newInterface);
   };
 
   const isLoading = groupsLoading || routesLoading;
@@ -335,30 +316,6 @@ export function DnsRouteGroup() {
               ))}
             </select>
           </div>
-          {selectedInterface && (
-            <div className="dns-group-routing__checkboxes">
-              <label className="dns-group-routing__checkbox-label">
-                <input
-                  type="checkbox"
-                  className="dns-group-routing__checkbox"
-                  checked={routeAuto}
-                  disabled={isSavingRoute}
-                  onChange={(e) => handleAutoChange(e.target.checked)}
-                />
-                Add automatically
-              </label>
-              <label className="dns-group-routing__checkbox-label">
-                <input
-                  type="checkbox"
-                  className="dns-group-routing__checkbox"
-                  checked={routeExclusive}
-                  disabled={isSavingRoute}
-                  onChange={(e) => handleExclusiveChange(e.target.checked)}
-                />
-                Exclusive route
-              </label>
-            </div>
-          )}
           {routeError && <div className="dns-group-routing__error">{routeError}</div>}
         </div>
       </Card>
