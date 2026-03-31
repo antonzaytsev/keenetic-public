@@ -9,6 +9,7 @@ import {
   useDeleteDomainGroup,
   useAddDnsRoute,
   useDeleteDnsRoute,
+  useBulkAddRoutes,
   useNetworkInterfaces,
 } from '../hooks';
 import type { DomainGroup, DnsRoute } from '../api';
@@ -54,11 +55,17 @@ export function DnsRoutes() {
   const deleteGroup = useDeleteDomainGroup();
   const addRoute = useAddDnsRoute();
   const deleteRoute = useDeleteDnsRoute();
+  const bulkAddRoutes = useBulkAddRoutes();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<DomainGroup | null>(null);
   const [form, setForm] = useState<GroupFormData>(emptyGroupForm);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Bulk assign state
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [bulkInterface, setBulkInterface] = useState('');
+  const [bulkError, setBulkError] = useState<string | null>(null);
 
   // Map group name → its DNS route
   const groupRouteMap = useMemo(() => {
@@ -138,11 +145,35 @@ export function DnsRoutes() {
 
   const handleDelete = async (group: DomainGroup) => {
     try {
-      const route = groupRouteMap.get(group.name);
-      if (route) await deleteRoute.mutateAsync(route.index);
+      // Backend handles route cleanup + restores surviving routes after firmware cascade
       await deleteGroup.mutateAsync(group.name);
     } catch (err) {
       console.error('Failed to delete group:', err);
+    }
+  };
+
+  // Groups that have no interface assigned
+  const groupsWithoutRoute = useMemo(() => {
+    return (groupsData?.domain_groups ?? []).filter((g) => !groupRouteMap.has(g.name));
+  }, [groupsData, groupRouteMap]);
+
+  const handleBulkAssign = async () => {
+    if (!bulkInterface) { setBulkError('Please select an interface'); return; }
+
+    const routes = groupsWithoutRoute.map((g) => ({
+      group: g.name,
+      interface: bulkInterface,
+    }));
+
+    if (routes.length === 0) { setBulkError('No groups without interface'); return; }
+
+    try {
+      await bulkAddRoutes.mutateAsync(routes);
+      setIsBulkModalOpen(false);
+      setBulkInterface('');
+      setBulkError(null);
+    } catch (err) {
+      setBulkError(err instanceof Error ? err.message : 'Failed to assign');
     }
   };
 
@@ -228,7 +259,7 @@ export function DnsRoutes() {
     },
   ];
 
-  const isSaving = createGroup.isPending || addRoute.isPending || deleteRoute.isPending;
+  const isSaving = createGroup.isPending || addRoute.isPending || deleteRoute.isPending || bulkAddRoutes.isPending;
 
   return (
     <div className="dns-routes-page">
@@ -240,10 +271,20 @@ export function DnsRoutes() {
       <section className="dns-routes-section">
         <div className="dns-routes-section__header">
           <h2 className="dns-routes-section__title">Domain Name Lists</h2>
-          <button className="dns-routes-add-btn" onClick={openCreateModal}>
-            {icons.plus}
-            Create group
-          </button>
+          <div className="dns-routes-section__actions">
+            {groupsWithoutRoute.length > 0 && (
+              <button
+                className="dns-routes-add-btn dns-routes-add-btn--secondary"
+                onClick={() => { setBulkInterface(''); setBulkError(null); setIsBulkModalOpen(true); }}
+              >
+                Assign interface to {groupsWithoutRoute.length} unrouted
+              </button>
+            )}
+            <button className="dns-routes-add-btn" onClick={openCreateModal}>
+              {icons.plus}
+              Create group
+            </button>
+          </div>
         </div>
         <Card padding="none">
           <Table
@@ -318,6 +359,61 @@ export function DnsRoutes() {
             </select>
           </div>
           {formError && <div className="modal-form__error">{formError}</div>}
+        </div>
+      </Modal>
+
+      {/* Bulk Assign Interface Modal */}
+      <Modal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        title={`Assign interface to ${groupsWithoutRoute.length} groups`}
+        footer={
+          <>
+            <button className="modal-btn modal-btn--secondary" onClick={() => setIsBulkModalOpen(false)}>
+              Cancel
+            </button>
+            <button
+              className="modal-btn modal-btn--primary"
+              onClick={handleBulkAssign}
+              disabled={bulkAddRoutes.isPending}
+            >
+              {bulkAddRoutes.isPending ? 'Assigning…' : 'Assign'}
+            </button>
+          </>
+        }
+      >
+        <div className="modal-form">
+          <div className="modal-form__group">
+            <label className="modal-form__label">Interface for all unrouted groups</label>
+            <select
+              className="modal-form__select"
+              value={bulkInterface}
+              onChange={(e) => setBulkInterface(e.target.value)}
+            >
+              <option value="">Select interface</option>
+              {[...(interfacesData?.interfaces ?? [])]
+                .filter((iface) => iface.security === 'public' && iface.connected)
+                .sort((a, b) => (a.description || a.id).localeCompare(b.description || b.id))
+                .map((iface) => (
+                <option key={iface.id} value={iface.id}>
+                  {iface.description || iface.id}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="modal-form__group">
+            <label className="modal-form__label">Groups to update</label>
+            <ul className="dns-bulk-group-list">
+              {groupsWithoutRoute
+                .sort((a, b) => (a.description || a.name).localeCompare(b.description || b.name))
+                .map((g) => (
+                <li key={g.name} className="dns-bulk-group-list__item">
+                  {g.description || g.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {bulkError && <div className="modal-form__error">{bulkError}</div>}
         </div>
       </Modal>
     </div>

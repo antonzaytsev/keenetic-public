@@ -18,14 +18,40 @@ class App < Roda
   plugin :not_found
   plugin :all_verbs
 
+  # Serialize all requests to the Keenetic router to avoid overwhelming it.
+  # The router returns HTTP 500 under concurrent load.
+  ROUTER_MUTEX = Mutex.new
+  ROUTER_CLIENT_TTL = 30 # seconds before refreshing the cached client
+  ROUTER_STATE = { client: nil, created_at: Time.at(0) }
+
   def keenetic_client
-    Keenetic.client
+    now = Time.now
+    if ROUTER_STATE[:client] && (now - ROUTER_STATE[:created_at]) < ROUTER_CLIENT_TTL
+      ROUTER_STATE[:client]
+    else
+      client = Keenetic.client
+      ROUTER_STATE[:client] = client
+      ROUTER_STATE[:created_at] = now
+      client
+    end
+  end
+
+  def reset_keenetic_client!
+    ROUTER_STATE[:client] = nil
+    ROUTER_STATE[:created_at] = Time.at(0)
+  end
+
+  def with_router(&block)
+    ROUTER_MUTEX.synchronize(&block)
   end
 
   error do |e|
     # Log the error with full backtrace
     warn "[ERROR] #{e.class}: #{e.message}"
     warn e.backtrace.first(10).join("\n") if e.backtrace
+
+    # Clear cached client on auth errors so next request re-authenticates
+    reset_keenetic_client! if e.is_a?(Keenetic::AuthenticationError)
 
     response.status = case e
     when Keenetic::NotFoundError then 404
@@ -116,6 +142,8 @@ class App < Roda
         end
       end
 
+      # Serialize all router access — Keenetic returns HTTP 500 under concurrent load
+      with_router do
 
       # Devices endpoints
       r.on 'devices' do
@@ -664,8 +692,40 @@ class App < Roda
             name = URI.decode_www_form_component(name_param)
 
             # DELETE /api/dns-routes/domain-groups/:name
+            # Deletes domain group, then restores all remaining routes
+            # (Keenetic firmware cascades and removes ALL routes when a group is deleted)
             r.delete do
+              # 1. Snapshot all current routes (except the one for the group being deleted)
+              surviving_routes = keenetic_client.dns_routes.routes.reject { |rt| rt[:group] == name }
+
+              # 2. Delete the domain group (firmware will wipe associated route + may wipe others)
               keenetic_client.dns_routes.delete_domain_group(name: name)
+
+              # 3. Re-apply all surviving routes in a single batch (with retry)
+              if surviving_routes.any?
+                commands = [
+                  { 'webhelp' => { 'event' => { 'push' => { 'data' => '{"type":"configuration_change","value":{"url":"/staticRoutes/dns"}}' } } } }
+                ]
+                surviving_routes.each do |rt|
+                  commands << { 'dns-proxy' => { 'route' => { 'group' => rt[:group], 'interface' => rt[:interface], 'auto' => true, 'comment' => rt[:comment].to_s } } }
+                end
+                commands << { 'system' => { 'configuration' => { 'save' => {} } } }
+
+                retries = 0
+                begin
+                  sleep 1 # let router finish processing the delete
+                  keenetic_client.batch(commands)
+                rescue => e
+                  retries += 1
+                  if retries <= 2
+                    warn "[WARN] Route restore attempt #{retries} failed: #{e.message}, retrying..."
+                    sleep 2
+                    retry
+                  end
+                  warn "[ERROR] Failed to restore routes after #{retries} attempts: #{e.message}"
+                end
+              end
+
               {
                 success: true,
                 timestamp: Time.now.iso8601
@@ -675,6 +735,57 @@ class App < Roda
         end
 
         r.on 'routes' do
+          # POST /api/dns-routes/routes/bulk - bulk set interface for multiple groups
+          r.on 'bulk' do
+            r.post do
+              params = r.params
+              routes_data = params['routes']
+
+              unless routes_data.is_a?(Array) && !routes_data.empty?
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'routes array is required and must not be empty',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              invalid = routes_data.any? do |route|
+                g = route['group']
+                i = route['interface']
+                g.nil? || g.strip.empty? || i.nil? || i.strip.empty?
+              end
+
+              if invalid
+                response.status = 400
+                next {
+                  error: 'Bad Request',
+                  message: 'each route must have group and interface',
+                  timestamp: Time.now.iso8601
+                }
+              end
+
+              routes_list = routes_data.map do |route|
+                { group: route['group'], interface: route['interface'], comment: route['comment'] || '' }
+              end
+
+              commands = [
+                { 'webhelp' => { 'event' => { 'push' => { 'data' => '{"type":"configuration_change","value":{"url":"/staticRoutes/dns"}}' } } } }
+              ]
+              routes_list.each do |route|
+                commands << { 'dns-proxy' => { 'route' => { 'group' => route[:group], 'interface' => route[:interface], 'auto' => true, 'comment' => route[:comment] } } }
+              end
+              commands << { 'system' => { 'configuration' => { 'save' => {} } } }
+
+              keenetic_client.batch(commands)
+              {
+                success: true,
+                count: routes_list.size,
+                timestamp: Time.now.iso8601
+              }
+            end
+          end
+
           r.is do
             # GET /api/dns-routes/routes
             r.get do
@@ -734,6 +845,8 @@ class App < Roda
           end
         end
       end
+
+      end # with_router
     end
   end
 end

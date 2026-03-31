@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+echo "Installing dependencies..."
+CI=true pnpm install
+
+echo "Starting application..."
+exec pnpm dev --host 0.0.0.0 --port ${FRONTEND_PORT:-3000}

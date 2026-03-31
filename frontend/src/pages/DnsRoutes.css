@@ -205,6 +205,48 @@ tr:hover .dns-actions {
   font-size: 0.875rem;
 }
 
+/* Section header actions */
+.dns-routes-section__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Secondary button variant */
+.dns-routes-add-btn--secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.dns-routes-add-btn--secondary:hover {
+  background: var(--bg-secondary, var(--bg-elevated));
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Bulk group list in modal */
+.dns-bulk-group-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+.dns-bulk-group-list__item {
+  padding: 6px 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dns-bulk-group-list__item:last-child {
+  border-bottom: none;
+}
+
 @media (max-width: 768px) {
   .dns-actions {
     opacity: 1;

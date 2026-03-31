@@ -6,5 +6,5 @@ export { usePorts } from './usePorts';
 export { usePolicies, usePolicy } from './usePolicies';
 export { useRoutes, useArpTable, useCreateRoute, useDeleteRoute } from './useRouting';
 export { useDeviceEvents, useSystemLogs } from './useLogs';
-export { useDomainGroups, useDnsRoutes, useCreateDomainGroup, useDeleteDomainGroup, useAddDnsRoute, useDeleteDnsRoute } from './useDnsRoutes';
+export { useDomainGroups, useDnsRoutes, useCreateDomainGroup, useDeleteDomainGroup, useAddDnsRoute, useDeleteDnsRoute, useBulkAddRoutes } from './useDnsRoutes';
 

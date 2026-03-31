@@ -42,6 +42,7 @@ export function useDeleteDomainGroup() {
       api.delete<{ success: boolean }>(`/dns-routes/domain-groups/${encodeURIComponent(name)}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dns-routes', 'domain-groups'] });
+      queryClient.invalidateQueries({ queryKey: ['dns-routes', 'routes'] });
     },
   });
 }
@@ -58,7 +59,7 @@ export function useAddDnsRoute() {
     mutationFn: (params: AddDnsRouteParams) =>
       api.post<{ success: boolean }>('/dns-routes/routes', params as unknown as Record<string, unknown>),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['dns-routes'] });
+      queryClient.invalidateQueries({ queryKey: ['dns-routes', 'routes'] });
     },
   });
 }
@@ -68,6 +69,23 @@ export function useDeleteDnsRoute() {
   return useMutation({
     mutationFn: (index: string) =>
       api.delete<{ success: boolean }>(`/dns-routes/routes/${encodeURIComponent(index)}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dns-routes', 'routes'] });
+    },
+  });
+}
+
+interface BulkRouteParams {
+  group: string;
+  interface: string;
+  comment?: string;
+}
+
+export function useBulkAddRoutes() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (routes: BulkRouteParams[]) =>
+      api.post<{ success: boolean; count: number }>('/dns-routes/routes/bulk', { routes } as unknown as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dns-routes', 'routes'] });
     },
