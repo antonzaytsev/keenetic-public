@@ -199,6 +199,9 @@
 }
 
 .dns-domains-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 14px;
   border-radius: var(--border-radius);
   font-family: inherit;
@@ -208,6 +211,12 @@
   border: none;
   transition: all 0.15s ease;
   white-space: nowrap;
+}
+
+.dns-domains-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .dns-domains-btn:disabled {

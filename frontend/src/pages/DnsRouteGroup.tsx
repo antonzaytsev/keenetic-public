@@ -81,6 +81,21 @@ export function DnsRouteGroup() {
     }
   };
 
+  // Numeric-aware so IP entries order naturally (10.0.0.2 before 10.0.0.10)
+  const compareEntries = (a: string, b: string) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+
+  const isSorted = useMemo(
+    () => domains.every((d, i) => i === 0 || compareEntries(domains[i - 1], d) <= 0),
+    [domains],
+  );
+
+  const handleSortDomains = () => {
+    const updated = [...domains].sort(compareEntries);
+    setDomains(updated);
+    persistDomains(updated);
+  };
+
   const handleRemoveDomain = (domain: string) => {
     const updated = domains.filter((d) => d !== domain);
     setDomains(updated);
@@ -208,9 +223,32 @@ export function DnsRouteGroup() {
       </button>
     </div>
   ) : (
-    <button className="dns-domains-btn dns-domains-btn--ghost" onClick={enterTextareaMode}>
-      Edit as text
-    </button>
+    <div className="dns-domains-actions">
+      <button
+        className="dns-domains-btn dns-domains-btn--ghost"
+        onClick={handleSortDomains}
+        disabled={domains.length < 2 || isSorted}
+        title={
+          domains.length < 2
+            ? 'Nothing to sort'
+            : isSorted
+              ? 'Already sorted alphabetically'
+              : 'Sort the list alphabetically and save'
+        }
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="4" y1="7" x2="14" y2="7" />
+          <line x1="4" y1="12" x2="11" y2="12" />
+          <line x1="4" y1="17" x2="8" y2="17" />
+          <polyline points="17,10 20,7 17,4" />
+          <line x1="20" y1="7" x2="20" y2="20" />
+        </svg>
+        Sort A–Z
+      </button>
+      <button className="dns-domains-btn dns-domains-btn--ghost" onClick={enterTextareaMode}>
+        Edit as text
+      </button>
+    </div>
   );
 
   return (
