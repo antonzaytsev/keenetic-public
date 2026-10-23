@@ -6,6 +6,46 @@
   overflow: hidden;
 }
 
+.dns-routes-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dns-routes-tabs__tab {
+  padding: 12px 20px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.dns-routes-tabs__tab:hover,
+.dns-routes-tabs__tab--active {
+  color: var(--accent-primary);
+}
+
+.dns-routes-tabs__tab--active {
+  border-bottom-color: var(--accent-primary);
+}
+
+.dns-domain-search {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 320px;
+  max-width: 100%;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.dns-domain-name {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
 /* Section layout */
 .dns-routes-section {
   display: flex;

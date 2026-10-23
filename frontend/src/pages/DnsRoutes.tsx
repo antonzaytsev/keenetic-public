@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout';
 import { Card, Table, type Column, Modal } from '../components/ui';
 import {
@@ -47,9 +47,9 @@ const emptyGroupForm: GroupFormData = { name: '', domainsText: '', interface: ''
 export function DnsRoutes() {
   const navigate = useNavigate();
 
-  const { data: groupsData, isLoading: groupsLoading } = useDomainGroups();
-  const { data: routesData } = useDnsRoutes();
-  const { data: interfacesData } = useNetworkInterfaces();
+  const { data: groupsData, isLoading: groupsLoading, isError: groupsError } = useDomainGroups();
+  const { data: routesData, isLoading: routesLoading, isError: routesError } = useDnsRoutes();
+  const { data: interfacesData, isLoading: interfacesLoading } = useNetworkInterfaces();
 
   const createGroup = useCreateDomainGroup();
   const deleteGroup = useDeleteDomainGroup();
@@ -57,6 +57,8 @@ export function DnsRoutes() {
   const deleteRoute = useDeleteDnsRoute();
   const bulkAddRoutes = useBulkAddRoutes();
 
+  const [activeTab, setActiveTab] = useState<'groups' | 'domains'>('groups');
+  const [domainSearch, setDomainSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<DomainGroup | null>(null);
   const [form, setForm] = useState<GroupFormData>(emptyGroupForm);
@@ -82,6 +84,51 @@ export function DnsRoutes() {
     });
     return map;
   }, [interfacesData]);
+
+  const domainRows = useMemo(() => (
+    (groupsData?.domain_groups ?? []).flatMap((group) => (
+      group.domains.map((domain, index) => ({
+        key: JSON.stringify([group.name, domain, index]),
+        domain,
+        group,
+        interface: groupRouteMap.get(group.name)?.interface,
+      }))
+    )).sort((a, b) => (
+      a.domain.localeCompare(b.domain, undefined, { sensitivity: 'base' })
+      || (a.group.description || a.group.name).localeCompare(b.group.description || b.group.name)
+    ))
+  ), [groupsData, groupRouteMap]);
+
+  const filteredDomains = useMemo(() => {
+    const query = domainSearch.trim().toLowerCase();
+    return domainRows.filter((row) => row.domain.toLowerCase().includes(query));
+  }, [domainRows, domainSearch]);
+
+  const domainColumns: Column<(typeof domainRows)[number]>[] = [
+    {
+      key: 'domain',
+      header: 'Domain',
+      render: (row) => <span className="dns-domain-name">{row.domain}</span>,
+    },
+    {
+      key: 'group',
+      header: 'Group',
+      render: (row) => (
+        <Link className="dns-group-link" to={`/dns-routes/${encodeURIComponent(row.group.name)}`}>
+          {row.group.description || row.group.name}
+        </Link>
+      ),
+    },
+    {
+      key: 'interface',
+      header: 'Interface',
+      render: (row) => row.interface ? (
+        <span className="dns-route-interface">
+          {interfaceNames.get(row.interface) || row.interface}
+        </span>
+      ) : <span className="dns-no-route">No routing rule</span>,
+    },
+  ];
 
   const openCreateModal = () => {
     setForm(emptyGroupForm);
@@ -268,7 +315,34 @@ export function DnsRoutes() {
         subtitle={`${groupsData?.count ?? 0} domain groups · ${routesData?.count ?? 0} routing rules`}
       />
 
-      <section className="dns-routes-section">
+      <div className="dns-routes-tabs" role="tablist" aria-label="DNS routes view">
+        {(['groups', 'domains'] as const).map((tab) => (
+          <button
+            key={tab}
+            id={`dns-${tab}-tab`}
+            role="tab"
+            aria-selected={activeTab === tab}
+            aria-controls={`dns-${tab}-panel`}
+            tabIndex={activeTab === tab ? 0 : -1}
+            className={`dns-routes-tabs__tab ${activeTab === tab ? 'dns-routes-tabs__tab--active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+            onKeyDown={(event) => {
+              if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                event.preventDefault();
+                const next = event.key === 'Home' ? 'groups' : event.key === 'End' ? 'domains'
+                  : tab === 'groups' ? 'domains' : 'groups';
+                setActiveTab(next);
+                document.getElementById(`dns-${next}-tab`)?.focus();
+              }
+            }}
+          >
+            {tab === 'groups' ? 'Groups' : 'Domains'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'groups' ? (
+      <section className="dns-routes-section" id="dns-groups-panel" role="tabpanel" aria-labelledby="dns-groups-tab">
         <div className="dns-routes-section__header">
           <h2 className="dns-routes-section__title">Domain Name Lists</h2>
           <div className="dns-routes-section__actions">
@@ -299,6 +373,43 @@ export function DnsRoutes() {
           />
         </Card>
       </section>
+      ) : (
+        <section className="dns-routes-section" id="dns-domains-panel" role="tabpanel" aria-labelledby="dns-domains-tab">
+          <div className="dns-routes-section__header">
+            <h2 className="dns-routes-section__title">All Domains</h2>
+            <label className="dns-domain-search">
+              <span>Search by domain name</span>
+              <input
+                type="search"
+                className="modal-form__input"
+                placeholder="e.g. youtube.com"
+                value={domainSearch}
+                onChange={(event) => setDomainSearch(event.target.value)}
+              />
+            </label>
+          </div>
+          {groupsError || routesError ? (
+            <p className="modal-form__error" role="alert">Unable to load domains or routing rules. Retrying…</p>
+          ) : (
+            <>
+              {!groupsLoading && !routesLoading && (
+                <span className="dns-no-route" role="status">
+                  {filteredDomains.length} of {domainRows.length} domain entries
+                </span>
+              )}
+              <Card padding="none">
+                <Table
+                  columns={domainColumns}
+                  data={filteredDomains}
+                  keyExtractor={(row) => row.key}
+                  loading={groupsLoading || routesLoading || interfacesLoading}
+                  emptyMessage={domainSearch.trim() ? 'No domains match your search' : 'No domains configured'}
+                />
+              </Card>
+            </>
+          )}
+        </section>
+      )}
 
       {/* Create / Edit Group Modal */}
       <Modal
